@@ -19,7 +19,7 @@
     },
     "bundle": {
       "active": true,
-      "targets": "all",
+      "targets": ["deb", "updater"],
       "identifier": "com.tauri.dev",
       "icon": [
         "icons/32x32.png",
@@ -34,8 +34,8 @@
     },
     "windows": [
       {
-        "fullscreen": false,
-        "resizable": true,
+        "fullscreen": true,
+        "resizable": false,
         "title": "last_snow",
         "width": 1280,
         "height": 400
