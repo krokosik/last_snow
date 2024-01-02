@@ -8,17 +8,21 @@ import {
   Textarea,
   VStack,
   useColorMode,
+  useToast,
 } from "@chakra-ui/react";
 import { ChangeEvent, useCallback, useRef, useState } from "react";
 import { LanguageButton, ActionButton } from "./components";
-import { DIM, LOGIC } from "./const";
+import { DIM, LANGUAGES, LOGIC } from "./const";
 
 export default function App() {
   const { setColorMode } = useColorMode();
+  const toast = useToast();
   setColorMode("dark");
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState("");
+  const [language, setLanguage] = useState<string>(LANGUAGES[0]);
+  const [isLoading, setLoading] = useState(false);
 
   const handleInputChange = useCallback((e: ChangeEvent) => {
     // @ts-ignore
@@ -34,15 +38,63 @@ export default function App() {
 
   const handleInputClear = useCallback(() => {
     setText("");
+  }, []);
+
+  const handleLanguageChange = useCallback((lang: string) => {
+    setLanguage(lang);
+  }, []);
+
+  const handleFocusChange = useCallback(() => {
     textareaRef.current?.focus();
   }, []);
 
+  const handleSubmit = useCallback(() => {
+    setLoading(true);
+
+    const dummyPerspectiveAPIPromise = new Promise<void>((resolve, reject) =>
+      setTimeout(() => (Math.random() > 0.1 ? resolve() : reject()), 1000)
+    );
+
+    const dummySubmitPromise = new Promise<void>((resolve) =>
+      setTimeout(resolve, 1000)
+    );
+
+    toast.promise(
+      dummyPerspectiveAPIPromise
+        .then(() => dummySubmitPromise)
+        .then(() => {
+          setText("");
+        })
+        .finally(() => {
+          setLoading(false);
+        }),
+      {
+        success: {
+          title: "Success!",
+          description: "Your text has been submitted.",
+        },
+        loading: { title: "Submitting text..." },
+        error: {
+          title: "Failure",
+          description: "Your text could not be submitted.",
+        },
+      }
+    );
+  }, []);
+
   return (
-    <Container maxW={DIM.WIDTH}>
+    <Container maxW={DIM.WIDTH} onClick={handleFocusChange}>
       <HStack>
         <VStack w={DIM.SIDE_BAR} h={DIM.HEIGHT} justifyContent="space-around">
-          <LanguageButton country="en" />
-          <LanguageButton country="jp" />
+          {LANGUAGES.map((lang) => (
+            <LanguageButton
+              key={lang}
+              country={lang}
+              colorScheme="blue"
+              variant={lang === language ? "solid" : "outline"}
+              onClick={() => handleLanguageChange(lang)}
+            />
+          ))}
         </VStack>
         <Container flex={1} maxW="container.md">
           <Flex direction="column" justifyContent="space-between">
@@ -50,9 +102,10 @@ export default function App() {
               ref={textareaRef}
               autoFocus
               flex={1}
-              rows={5}
-              maxLength={160}
+              rows={4}
+              maxLength={LOGIC.SENTENCE_LIMIT}
               value={text}
+              isDisabled={isLoading}
               onChange={handleInputChange}
               resize="none"
               fontSize="4xl"
@@ -65,10 +118,20 @@ export default function App() {
         <VStack w={DIM.SIDE_BAR} h={DIM.HEIGHT} justifyContent="space-around">
           <ActionButton
             aria-label="Clear textarea"
+            colorScheme="red"
+            variant="outline"
+            isDisabled={text.length === 0 || isLoading}
             icon={<CloseIcon />}
             onClick={handleInputClear}
           />
-          <ActionButton aria-label="Send text" icon={<CheckCircleIcon />} />
+          <ActionButton
+            isDisabled={text.length < 10}
+            isLoading={isLoading}
+            colorScheme="green"
+            aria-label="Send text"
+            onClick={handleSubmit}
+            icon={<CheckCircleIcon />}
+          />
         </VStack>
       </HStack>
     </Container>

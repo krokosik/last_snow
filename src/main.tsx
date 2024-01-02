@@ -17,7 +17,11 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <ChakraProvider
       theme={theme}
       toastOptions={{
-        defaultOptions: { position: "top", duration: 3000, isClosable: false },
+        defaultOptions: {
+          position: "bottom",
+          duration: 3000,
+          isClosable: false,
+        },
       }}
     >
       <App />
