@@ -9,3 +9,8 @@ export const LOGIC = {
 } as const;
 
 export const LANGUAGES = ["en", "jp"] as const;
+
+export const SAMPLES = {
+  en: "The snow is melting.\nEverything is wet.\nI hope this app will work.",
+  jp: "こんにちは\nビールをください。\nさようなら。"
+}

@@ -3,16 +3,15 @@ import {
   Container,
   Flex,
   HStack,
-  IconButton,
   Text,
   Textarea,
   VStack,
   useColorMode,
-  useToast,
+  useToast
 } from "@chakra-ui/react";
 import { ChangeEvent, useCallback, useRef, useState } from "react";
-import { LanguageButton, ActionButton } from "./components";
-import { DIM, LANGUAGES, LOGIC } from "./const";
+import { ActionButton, LanguageButton } from "./components";
+import { DIM, LANGUAGES, LOGIC, SAMPLES } from "./const";
 
 export default function App() {
   const { setColorMode } = useColorMode();
@@ -21,7 +20,7 @@ export default function App() {
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState("");
-  const [language, setLanguage] = useState<string>(LANGUAGES[0]);
+  const [language, setLanguage] = useState<"en" | "jp">(LANGUAGES[0]);
   const [isLoading, setLoading] = useState(false);
 
   const handleInputChange = useCallback((e: ChangeEvent) => {
@@ -40,7 +39,7 @@ export default function App() {
     setText("");
   }, []);
 
-  const handleLanguageChange = useCallback((lang: string) => {
+  const handleLanguageChange = useCallback((lang: "en" | "jp") => {
     setLanguage(lang);
   }, []);
 
@@ -109,6 +108,7 @@ export default function App() {
               onChange={handleInputChange}
               resize="none"
               fontSize="4xl"
+              onClick={() => text.length === 0 && setText(SAMPLES[language])}
             />
             <Text ml="auto">
               {text.length} / {LOGIC.SENTENCE_LIMIT}
