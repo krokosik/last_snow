@@ -9,9 +9,7 @@ export const LOGIC = {
   SENTENCE_LIMIT: 160,
 } as const;
 
-export const LANGUAGES = ["en", "jp"] as const;
-
-export const SAMPLES = {
-  en: "The snow is melting.\nEverything is wet.\nI hope this app will work.",
-  jp: "こんにちは\nビールをください。\nさようなら。",
-};
+export const LANGUAGES = {
+  en: "xkb:us::eng",
+  jp: "mozc-jp",
+} as const;

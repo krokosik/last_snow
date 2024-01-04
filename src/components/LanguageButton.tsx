@@ -11,7 +11,6 @@ export const LanguageButton = forwardRef<
       ref={ref}
       w="full"
       fontSize={DIM.BTN_FONT_SIZE}
-      h={DIM.SIDE_BAR}
       aria-label={`${country} keyboard layout`}
       textTransform="uppercase"
       //   icon={<Gb />}

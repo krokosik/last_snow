@@ -27,11 +27,13 @@
       },
       "shell": {
         "all": false,
-        "open": true
-      },
-      "http": {
-        "request": true,
-        "scope": ["https://commentanalyzer.googleapis.com/v1alpha1/*"]
+        "open": false,
+        "execute": true,
+        "scope": [{
+          "name": "kb",
+          "cmd": "ibus",
+          "args": ["engine", { "validator": ".+"}]
+        }]
       }
     },
     "bundle": {
