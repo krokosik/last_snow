@@ -2,7 +2,7 @@
   "tauri": {
     "windows": [
       {
-        "fullscreen": true,
+        "fullscreen": true
       }
     ]
   }
