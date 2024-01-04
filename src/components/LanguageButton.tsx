@@ -9,7 +9,9 @@ export const LanguageButton = forwardRef<
   return (
     <Button
       ref={ref}
+      isRound
       w="full"
+      h="full"
       fontSize={DIM.BTN_FONT_SIZE}
       aria-label={`${country} keyboard layout`}
       textTransform="uppercase"

@@ -1,5 +1,6 @@
 import { CheckCircleIcon, CloseIcon, Icon } from "@chakra-ui/icons";
 import {
+  Center,
   Container,
   Drawer,
   DrawerBody,
@@ -8,26 +9,24 @@ import {
   DrawerOverlay,
   Flex,
   HStack,
+  SimpleGrid,
   Text,
   Textarea,
   VStack,
-  useColorMode,
   useDisclosure,
   useToast,
 } from "@chakra-ui/react";
-import { ChangeEvent, useCallback, useRef, useState } from "react";
-import { ActionButton, LanguageButton } from "./components";
-import { DIM, LANGUAGES, LOGIC } from "./const";
 import { invoke } from "@tauri-apps/api";
 import { Command } from "@tauri-apps/api/shell";
-import { info } from "tauri-plugin-log-api";
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { MdOutlineKeyboard } from "react-icons/md";
+import { info } from "tauri-plugin-log-api";
+import { ActionButton, LanguageButton } from "./components";
+import { DIM, LANGUAGES, LOGIC } from "./const";
 
 export default function App() {
-  const { setColorMode } = useColorMode();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
-  setColorMode("dark");
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const kbBtnRef = useRef<HTMLButtonElement>(null);
@@ -58,6 +57,19 @@ export default function App() {
     },
     []
   );
+
+  useEffect(() => {
+    new Command("kb", ["engine", ""]).execute().then((res) => {
+      const lang = Object.entries(LANGUAGES).find(
+        ([_, value]) => value === res.stdout
+      )?.[0];
+
+      if (lang) {
+        info(`Detected language: ${lang}`);
+        setLanguage(lang as any);
+      }
+    });
+  }, []);
 
   const handleFocusChange = useCallback(() => {
     textareaRef.current?.focus();
@@ -99,7 +111,7 @@ export default function App() {
         <HStack>
           <VStack w={DIM.SIDE_BAR}>
             <ActionButton
-              ref={kbBtnRef}
+              ref={kbBtnRef as any}
               aria-label="change-keyboard-layout"
               colorScheme="blue"
               icon={<Icon as={MdOutlineKeyboard} />}
@@ -155,17 +167,20 @@ export default function App() {
         <DrawerContent>
           <DrawerHeader>Pick keyboard layout</DrawerHeader>
           <DrawerBody>
-            <VStack>
+            <SimpleGrid columns={2} spacing={12} px={5}>
               {Object.keys(LANGUAGES).map((lang) => (
-                <LanguageButton
-                  key={lang}
-                  country={lang}
-                  colorScheme="blue"
-                  variant={lang === language ? "solid" : "outline"}
-                  onClick={handleLanguageChange(lang as any)}
-                />
+                <Center>
+                  <LanguageButton
+                    aspectRatio={1}
+                    key={lang}
+                    country={lang}
+                    colorScheme="blue"
+                    variant={lang === language ? "solid" : "outline"}
+                    onClick={handleLanguageChange(lang as any)}
+                  />
+                </Center>
               ))}
-            </VStack>
+            </SimpleGrid>
           </DrawerBody>
         </DrawerContent>
       </Drawer>
