@@ -31,13 +31,8 @@ const SENTENCES_PER_CSV: usize = 100;
 fn submit_sentence(
     language: &str,
     text: &str,
-    app_handle: tauri::AppHandle,
 ) -> Result<(), String> {
-    let base_dir = app_handle
-        .path_resolver()
-        .app_data_dir()
-        .unwrap()
-        .join("sentences");
+    let base_dir = tauri::api::path::public_dir().unwrap().join("sentences");
     fs::create_dir_all(&base_dir).unwrap();
 
     let mut last_csv_idx = 0;
