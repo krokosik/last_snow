@@ -5,8 +5,8 @@ use std::fs;
 
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_log::LogTarget;
-use tauri_plugin_single_instance;
-use tauri_plugin_websocket;
+// use tauri_plugin_single_instance;
+// use tauri_plugin_websocket;
 
 use chrono::Utc;
 use csv;
@@ -111,8 +111,8 @@ fn main() {
                 .targets([LogTarget::LogDir, LogTarget::Stdout, LogTarget::Webview])
                 .build(),
         )
-        .plugin(tauri_plugin_store::Builder::default().build())
-        .plugin(tauri_plugin_websocket::init())
+        // .plugin(tauri_plugin_store::Builder::default().build())
+        // .plugin(tauri_plugin_websocket::init())
         .invoke_handler(tauri::generate_handler![submit_sentence])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
