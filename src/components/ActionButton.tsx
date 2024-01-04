@@ -8,7 +8,7 @@ export const ActionButton = forwardRef<typeof IconButton, IconButtonProps>(
       <IconButton
         ref={ref}
         w="full"
-        fontSize="3xl"
+        fontSize={DIM.BTN_FONT_SIZE}
         h={DIM.SIDE_BAR}
         textTransform="uppercase"
         {...props}

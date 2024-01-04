@@ -7,11 +7,12 @@ import {
   Textarea,
   VStack,
   useColorMode,
-  useToast
+  useToast,
 } from "@chakra-ui/react";
 import { ChangeEvent, useCallback, useRef, useState } from "react";
 import { ActionButton, LanguageButton } from "./components";
 import { DIM, LANGUAGES, LOGIC, SAMPLES } from "./const";
+import { invoke } from "@tauri-apps/api";
 
 export default function App() {
   const { setColorMode } = useColorMode();
@@ -54,9 +55,10 @@ export default function App() {
       setTimeout(() => (Math.random() > 0.1 ? resolve() : reject()), 1000)
     );
 
-    const dummySubmitPromise = new Promise<void>((resolve) =>
-      setTimeout(resolve, 1000)
-    );
+    const dummySubmitPromise = invoke("submit_sentence", {
+      language,
+      sentence: text,
+    });
 
     toast.promise(
       dummyPerspectiveAPIPromise
