@@ -13,6 +13,7 @@ import { ChangeEvent, useCallback, useRef, useState } from "react";
 import { ActionButton, LanguageButton } from "./components";
 import { DIM, LANGUAGES, LOGIC, SAMPLES } from "./const";
 import { invoke } from "@tauri-apps/api";
+import { info } from "tauri-plugin-log-api";
 
 export default function App() {
   const { setColorMode } = useColorMode();
@@ -55,9 +56,11 @@ export default function App() {
       setTimeout(() => (Math.random() > 0.1 ? resolve() : reject()), 1000)
     );
 
+    info(`Submitting ${text}`);
+
     const dummySubmitPromise = invoke("submit_sentence", {
       language,
-      sentence: text,
+      text,
     });
 
     toast.promise(
@@ -81,7 +84,7 @@ export default function App() {
         },
       }
     );
-  }, []);
+  }, [text, language]);
 
   return (
     <Container maxW={DIM.WIDTH} onClick={handleFocusChange}>

@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::error::Error;
+use std::fs;
 
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_log::LogTarget;
@@ -25,12 +25,12 @@ struct Row {
     timestamp: String,
 }
 
-const SENTENCES_PER_CSV: usize = 2;
+const SENTENCES_PER_CSV: usize = 100;
 
 #[tauri::command]
 fn submit_sentence(
     language: &str,
-    sentence: &str,
+    text: &str,
     app_handle: tauri::AppHandle,
 ) -> Result<(), String> {
     let base_dir = app_handle
@@ -38,11 +38,12 @@ fn submit_sentence(
         .app_data_dir()
         .unwrap()
         .join("sentences");
-    std::fs::create_dir_all(&base_dir).unwrap();
+    fs::create_dir_all(&base_dir).unwrap();
 
     let mut last_csv_idx = 0;
+
     // List all csv files in the directory
-    std::fs::read_dir(&base_dir).unwrap().for_each(|entry| {
+    fs::read_dir(&base_dir).unwrap().for_each(|entry| {
         let entry = entry.unwrap();
         last_csv_idx = std::cmp::max(
             entry
@@ -57,43 +58,37 @@ fn submit_sentence(
         );
     });
 
-    let row = Row {
-        language: language.to_string(),
-        sentence: sentence.to_string(),
-        timestamp: Utc::now().to_rfc3339(),
-    };
-
     let file_path = base_dir.join(format!("{}.csv", last_csv_idx));
 
-    let mut rdr_res = csv::Reader::from_path(&file_path);
-
-    if rdr_res.is_err() {
-        let mut wtr = csv::Writer::from_path(&file_path).unwrap();
-        wtr.serialize(row).unwrap();
-        wtr.flush().unwrap();
-        return Ok(());
+    // Check if the file has enough records
+    let rdr = csv::Reader::from_path(&file_path);
+    if let Ok(mut rdr) = rdr {
+        if let Ok(records) = rdr.records().collect::<Result<Vec<_>, _>>() {
+            if records.len() < SENTENCES_PER_CSV {
+                let file = fs::OpenOptions::new()
+                    .write(true)
+                    .append(true)
+                    .open(&file_path)
+                    .unwrap();
+                
+                let mut wtr = csv::Writer::from_writer(file);
+                
+                wtr.write_record(&[language, text, &Utc::now().to_rfc3339()]).unwrap();
+                wtr.flush().unwrap();
+                return Ok(());
+            } else {
+                last_csv_idx += 1;
+            }
+        }
     }
-    let mut rdr = rdr_res.unwrap();
+    
+    let file_path = base_dir.join(format!("{}.csv", last_csv_idx));
     let mut wtr = csv::Writer::from_path(&file_path).unwrap();
-
-    wtr.write_record(rdr.headers().unwrap()).unwrap();
-
-    let mut row_count = 0;
-    for result in rdr.deserialize() {
-        let row: Row = result.unwrap();
-        row_count += 1;
-        wtr.serialize(row).unwrap();
-    }
-
-    if row_count < SENTENCES_PER_CSV {
-        wtr.serialize(row).unwrap();
-    } else {
-        let file_path = base_dir.join(format!("{}.csv", last_csv_idx + 1));
-        let mut wtr = csv::Writer::from_path(file_path).unwrap();
-        wtr.write_record(rdr.headers().unwrap()).unwrap();
-        wtr.serialize(row).unwrap();
-    }
-
+    wtr.serialize(Row {
+        language: language.to_string(),
+        sentence: text.to_string(),
+        timestamp: Utc::now().to_rfc3339(),
+    }).unwrap();
     wtr.flush().unwrap();
 
     Ok(())
