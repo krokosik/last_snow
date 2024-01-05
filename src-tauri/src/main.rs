@@ -3,14 +3,10 @@
 
 use std::{fs, path::PathBuf, env};
 
-use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_log::LogTarget;
-// use tauri_plugin_single_instance;
-// use tauri_plugin_websocket;
 
 use chrono::Utc;
 use csv;
-use tauri::Manager;
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
@@ -121,23 +117,11 @@ fn get_env_var(key: &str) -> String {
 
 fn main() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_autostart::init(
-            MacosLauncher::LaunchAgent,
-            Some(vec![]),
-        ))
-        .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
-            println!("{}, {argv:?}, {cwd}", app.package_info().name);
-
-            app.emit_all("single-instance", Payload { args: argv, cwd })
-                .unwrap();
-        }))
         .plugin(
             tauri_plugin_log::Builder::default()
                 .targets([LogTarget::LogDir, LogTarget::Stdout, LogTarget::Webview])
                 .build(),
         )
-        // .plugin(tauri_plugin_store::Builder::default().build())
-        // .plugin(tauri_plugin_websocket::init())
         .invoke_handler(tauri::generate_handler![submit_sentence, get_env_var])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

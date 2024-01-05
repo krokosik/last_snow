@@ -15,16 +15,12 @@
     "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.11.0",
     "@tauri-apps/api": "^1.5.2",
-    "axios-tauri-api-adapter": "^0.2.1",
     "framer-motion": "^10.16.16",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-flags-select": "^2.2.3",
     "react-icons": "^4.12.0",
-    "tauri-plugin-autostart-api": "github:tauri-apps/tauri-plugin-autostart#v1",
-    "tauri-plugin-log-api": "github:tauri-apps/tauri-plugin-log#v1",
-    "tauri-plugin-store-api": "github:tauri-apps/tauri-plugin-store#v1",
-    "tauri-plugin-websocket-api": "github:tauri-apps/tauri-plugin-websocket#v1"
+    "tauri-plugin-log-api": "github:tauri-apps/tauri-plugin-log#v1"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^1.5.8",
