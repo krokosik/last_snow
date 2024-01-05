@@ -18,7 +18,8 @@
         "readDir": true,
         "readFile": true,
         "scope": ["$PUBLIC/*"],
-        "writeFile": true
+        "writeFile": true,
+        "renameFile": true
       },
       "shell": {
         "all": false,
