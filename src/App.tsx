@@ -35,6 +35,17 @@ export default function App() {
     textareaRef.current?.focus();
   }, []);
 
+  // Periodically check if textarea is focused
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.activeElement !== textareaRef.current) {
+        textareaRef.current?.focus();
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <>
       <HStack onClick={handleFocusChange}>
