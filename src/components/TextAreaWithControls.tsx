@@ -121,7 +121,7 @@ export const TextAreaWithControls = forwardRef<
           onClick={handleInputClear}
         />
         <ActionButton
-          isDisabled={text.length < 10}
+          isDisabled={text.length < 1}
           isLoading={isLoading}
           colorScheme="green"
           aria-label="Send text"
