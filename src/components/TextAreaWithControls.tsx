@@ -9,7 +9,13 @@ import {
 } from "@chakra-ui/react";
 import { ActionButton } from "./ActionButton";
 import { LOGIC, DIM, LANGUAGES } from "../const";
-import { ChangeEvent, forwardRef, useCallback, useState } from "react";
+import {
+  ChangeEvent,
+  KeyboardEvent,
+  forwardRef,
+  useCallback,
+  useState,
+} from "react";
 import { invoke } from "@tauri-apps/api";
 import { info } from "tauri-plugin-log-api";
 
@@ -67,6 +73,13 @@ export const TextAreaWithControls = forwardRef<
     );
   }, [text, language]);
 
+  const suppressTab = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, []);
+
   return (
     <>
       <Container flex={1} maxW="container.lg">
@@ -82,6 +95,7 @@ export const TextAreaWithControls = forwardRef<
             onChange={handleInputChange}
             resize="none"
             fontSize="4xl"
+            onKeyDown={suppressTab}
           />
           <Text ml="auto">
             {text.length} / {LOGIC.SENTENCE_LIMIT}
