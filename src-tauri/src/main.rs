@@ -99,9 +99,13 @@ fn submit_sentence(
     
     let rows = count_csv_rows(&tmp_file_path);
     write_sentence(&row, &tmp_file_path, rows == 0);
+    let sentences_per_csv = env::var("SENTENCES_PER_CSV").unwrap_or(format!("{}", SENTENCES_PER_CSV)).parse::<usize>().unwrap();
 
-    if rows + 1 >= env::var("SENTENCES_PER_CSV").unwrap_or(format!("{}", SENTENCES_PER_CSV)).parse::<usize>().unwrap() {
+    log::info!("{}/{} rows in tmp.csv", rows + 1, sentences_per_csv);
+
+    if rows + 1 >= sentences_per_csv {
         let new_file_path = get_new_filename(&base_dir);
+        log::info!("Moving tmp.csv to {}", new_file_path.to_str().unwrap());
         fs::rename(&tmp_file_path, &new_file_path).unwrap();
     }
 
