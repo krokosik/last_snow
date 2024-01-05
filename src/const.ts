@@ -11,5 +11,5 @@ export const LOGIC = {
 
 export const LANGUAGES = {
   en: "xkb:us::eng",
-  jp: "mozc-jp",
+  jp: "anthy",
 } as const;

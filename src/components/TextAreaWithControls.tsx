@@ -14,6 +14,7 @@ import {
   KeyboardEvent,
   forwardRef,
   useCallback,
+  useEffect,
   useState,
 } from "react";
 import { invoke } from "@tauri-apps/api";
@@ -25,6 +26,7 @@ export const TextAreaWithControls = forwardRef<
 >(({ language }, ref) => {
   const toast = useToast();
   const [text, setText] = useState("");
+  const [max_len, setMaxLen] = useState<number>(LOGIC.SENTENCE_LIMIT);
   const [isLoading, setLoading] = useState(false);
 
   const handleInputChange = useCallback((e: ChangeEvent) => {
@@ -80,6 +82,14 @@ export const TextAreaWithControls = forwardRef<
     }
   }, []);
 
+  useEffect(() => {
+    invoke<string>("get_env_var", { key: "MAX_LEN" }).then((res) => {
+      if (+res) {
+        setMaxLen(+res);
+      }
+    });
+  }, []);
+
   return (
     <>
       <Container flex={1} maxW="container.lg">
@@ -89,7 +99,7 @@ export const TextAreaWithControls = forwardRef<
             autoFocus
             flex={1}
             rows={4}
-            maxLength={LOGIC.SENTENCE_LIMIT}
+            maxLength={max_len}
             value={text}
             isDisabled={isLoading}
             onChange={handleInputChange}
@@ -98,7 +108,7 @@ export const TextAreaWithControls = forwardRef<
             onKeyDown={suppressTab}
           />
           <Text ml="auto">
-            {text.length} / {LOGIC.SENTENCE_LIMIT}
+            {text.length} / {max_len}
           </Text>
         </Flex>
       </Container>

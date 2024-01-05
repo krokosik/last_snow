@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::fs;
+use std::{fs, path::PathBuf, env};
 
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_log::LogTarget;
@@ -27,18 +27,22 @@ struct Row {
 
 const SENTENCES_PER_CSV: usize = 100;
 
-#[tauri::command]
-fn submit_sentence(
-    language: &str,
-    text: &str,
-) -> Result<(), String> {
-    let base_dir = tauri::api::path::public_dir().unwrap().join("sentences");
-    fs::create_dir_all(&base_dir).unwrap();
+fn count_csv_rows(file_path: &PathBuf) -> usize {
+    let rdr = csv::Reader::from_path(&file_path);
+    if let Ok(mut rdr) = rdr {
+        if let Ok(records) = rdr.records().collect::<Result<Vec<_>, _>>() {
+            return records.len();
+        }
+    }
+    0
+}
 
+fn get_new_filename(base_dir: &PathBuf) -> PathBuf {
     let mut last_csv_idx = 0;
+    fs::create_dir_all(base_dir.join("sentences")).unwrap();
 
     // List all csv files in the directory
-    fs::read_dir(&base_dir).unwrap().for_each(|entry| {
+    fs::read_dir(base_dir.join("sentences")).unwrap().for_each(|entry| {
         let entry = entry.unwrap();
         last_csv_idx = std::cmp::max(
             entry
@@ -53,40 +57,62 @@ fn submit_sentence(
         );
     });
 
-    let file_path = base_dir.join(format!("{}.csv", last_csv_idx));
+    base_dir.join("sentences").join(format!("{}.csv", last_csv_idx + 1))
+}
 
-    // Check if the file has enough records
-    let rdr = csv::Reader::from_path(&file_path);
-    if let Ok(mut rdr) = rdr {
-        if let Ok(records) = rdr.records().collect::<Result<Vec<_>, _>>() {
-            if records.len() < SENTENCES_PER_CSV {
-                let file = fs::OpenOptions::new()
-                    .write(true)
-                    .append(true)
-                    .open(&file_path)
-                    .unwrap();
-                
-                let mut wtr = csv::Writer::from_writer(file);
-                
-                wtr.write_record(&[language, text, &Utc::now().to_rfc3339()]).unwrap();
-                wtr.flush().unwrap();
-                return Ok(());
-            } else {
-                last_csv_idx += 1;
-            }
-        }
-    }
+fn write_sentence(row: &Row, file_path: &PathBuf, headers: bool) {
+    let file = fs::OpenOptions::new()
+        .write(true)
+        .append(true)
+        .create(true)
+        .open(file_path)
+        .unwrap();
     
-    let file_path = base_dir.join(format!("{}.csv", last_csv_idx));
-    let mut wtr = csv::Writer::from_path(&file_path).unwrap();
-    wtr.serialize(Row {
+    let mut wtr = csv::Writer::from_writer(file);
+    
+    if headers {
+        wtr.serialize(row).unwrap();
+    } else {
+        wtr.write_record(&[
+            &row.language,
+            &row.sentence,
+            &row.timestamp,
+        ]).unwrap();
+    }
+    wtr.flush().unwrap();
+}
+
+#[tauri::command]
+fn submit_sentence(
+    language: &str,
+    text: &str,
+) -> Result<(), String> {
+    let base_dir = tauri::api::path::public_dir().unwrap();
+
+    let row = Row {
         language: language.to_string(),
         sentence: text.to_string(),
         timestamp: Utc::now().to_rfc3339(),
-    }).unwrap();
-    wtr.flush().unwrap();
+    };
+
+    let tmp_file_path = base_dir.join("tmp.csv");
+    
+    let rows = count_csv_rows(&tmp_file_path);
+    write_sentence(&row, &tmp_file_path, rows == 0);
+
+    if rows + 1 >= env::var("SENTENCES_PER_CSV").unwrap_or(format!("{}", SENTENCES_PER_CSV)).parse::<usize>().unwrap() {
+        let new_file_path = get_new_filename(&base_dir);
+        fs::rename(&tmp_file_path, &new_file_path).unwrap();
+    }
 
     Ok(())
+}
+
+#[tauri::command]
+fn get_env_var(key: &str) -> String {
+    let res =    env::var(key).unwrap_or("".to_string());
+    log::info!("Getting env var {}", res);
+    res
 }
 
 fn main() {
@@ -108,7 +134,7 @@ fn main() {
         )
         // .plugin(tauri_plugin_store::Builder::default().build())
         // .plugin(tauri_plugin_websocket::init())
-        .invoke_handler(tauri::generate_handler![submit_sentence])
+        .invoke_handler(tauri::generate_handler![submit_sentence, get_env_var])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
