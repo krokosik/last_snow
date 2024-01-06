@@ -1,6 +1,6 @@
 # Last Snow Input+Display
 
-This code should be run on a prepared Raspberry Pi connected to the touch screen display. In case the provided SD card cannot be used, an OS image can be downloaded from [here]().
+This code should be run on a prepared Raspberry Pi connected to the touch screen display. In case the provided SD card cannot be used, an OS image can be downloaded from [here](https://drive.google.com/file/d/1C69SJAPZ8itXk2L6r_15shJzHu12Gr_M/view?usp=sharing).
 
 ## Setup
 
@@ -19,6 +19,8 @@ While the program does not require internet connection to work, it needs to be o
 2. Another way is to use a cross-over Ethernet cable to connect the PC and the Raspberry Pi directly. This method is not recommended, as it requires a special cable.
 
 3. If all else fails you can connect the Raspberry Pi to Wifi. To do this, you need to first kill the main program, in order to see the taskbar. For this, see how to connect via SSH below. Once you have the taskbar, click on the network icon and connect to the network.
+
+Make sure the Pi is connected by pinging it from the PC. Open the terminal and execute `ping last-snow.local`.
 
 ### Software
 
