@@ -115,7 +115,7 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
         match store.get("td_osc_address") {
             Some(val) => {
                 let addr = val.as_str().unwrap();
-                let socket = UdpSocket::bind("127.0.0.1:7000").unwrap();
+                let socket = UdpSocket::bind("127.0.0.1:7001").unwrap();
                 let msg = rosc::encoder::encode(&OscPacket::Message(rosc::OscMessage {
                     addr: "/new_row".to_string(),
                     args: vec![OscType::Int(rows as i32)],
@@ -206,6 +206,8 @@ fn main() {
             )
             .build();
 
+            log::info!("Using store at {}", get_setting_store_path(&app.handle()).display());
+
             store.load().unwrap_or_else(|e| {
                 log::error!("Error loading store: {}", e);
             });
@@ -234,19 +236,20 @@ fn main() {
 
             thread::spawn(move || {
                 // Bind the UDP socket to listen on port 7000
-                let socket = UdpSocket::bind("127.0.0.1:7000").unwrap();
+                let socket = UdpSocket::bind("last-snow.local:7000").unwrap();
+                log::info!("Listening on {}", socket.local_addr().unwrap());
 
                 let mut buf = [0u8; rosc::decoder::MTU];
 
                 loop {
                     match socket.recv_from(&mut buf) {
                         Ok((size, addr)) => {
-                            println!("Received packet with size {} from: {}", size, addr);
+                            log::info!("Received packet with size {} from: {}", size, addr);
                             let (_, msg) = rosc::decoder::decode_udp(&buf[..size]).unwrap();
                             handle_packet(msg, &app_handle, &mut store);
                         }
                         Err(e) => {
-                            println!("Error receiving from socket: {}", e);
+                            log::info!("Error receiving from socket: {}", e);
                             break;
                         }
                     }
