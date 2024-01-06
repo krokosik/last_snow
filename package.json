@@ -20,7 +20,8 @@
     "react-dom": "^18.2.0",
     "react-flags-select": "^2.2.3",
     "react-icons": "^4.12.0",
-    "tauri-plugin-log-api": "github:tauri-apps/tauri-plugin-log#v1"
+    "tauri-plugin-log-api": "github:tauri-apps/tauri-plugin-log#v1",
+    "tauri-plugin-store-api": "github:tauri-apps/tauri-plugin-store#v1"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^1.5.8",
