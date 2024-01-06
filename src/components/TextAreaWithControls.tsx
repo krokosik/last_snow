@@ -83,6 +83,9 @@ export const TextAreaWithControls = forwardRef<
       e.preventDefault();
       e.stopPropagation();
     }
+    if (e.key === "Enter" && e.shiftKey) {
+      handleSubmit();
+    }
   }, []);
 
   useEffect(() => {

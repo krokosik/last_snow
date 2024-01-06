@@ -44,6 +44,8 @@ In case there is no Japanese keyboard available, there are shortcuts for togglin
 - `Ctrl + Shift + .` toggles between Hiragana and Katakana
 - `Space` is used to cycle between different suggestions
 
+All system keyboard shortcuts like `Alt+F4` or `Ctrl+Alt+Del` are disabled. For submitting text, apart from the touch button, you can also use `Shift+Enter` on the keyboard.
+
 #### SSH
 
 In case something goes wrong and you need to access the Raspberry Pi directly, you can do so via SSH. Open your terminal and execute: `ssh last_snow@last-snow.local` and type in the same password as for the shared network folder. You now have access to the Raspberry Pi command line. To kill the main program, execute `lsk`. To update it, execute `lsu`. To restart the Raspberry Pi, execute `sudo reboot`. The CSV files are located inside `~/Public`.
