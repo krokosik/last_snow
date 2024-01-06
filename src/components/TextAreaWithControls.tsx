@@ -79,15 +79,17 @@ export const TextAreaWithControls = forwardRef<
     );
   }, [text, language]);
 
-  const suppressTab = useCallback((e: KeyboardEvent) => {
-    if (e.key === "Tab") {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    if (e.key === "Enter" && e.shiftKey) {
-      handleSubmit();
-    }
-  }, []);
+  const suppressTab = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        e.stopPropagation();
+      } else if (e.key === "Enter" && e.shiftKey) {
+        handleSubmit();
+      }
+    },
+    [handleSubmit]
+  );
 
   useEffect(() => {
     appConfigDir().then((dir) => {
