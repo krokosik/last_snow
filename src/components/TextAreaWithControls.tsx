@@ -49,6 +49,7 @@ export const TextAreaWithControls = forwardRef<
   }, []);
 
   const handleSubmit = useCallback(() => {
+    if (text.length === 0) return;
     setLoading(true);
 
     info(`Submitting ${text}`);

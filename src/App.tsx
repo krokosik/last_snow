@@ -18,7 +18,7 @@ export default function App() {
       .then((res) => {
         info(`Detected keyboard engine: ${res.stdout}`);
         const lang = Object.entries(LANGUAGES).find(
-          ([_, value]) => value === res.stdout
+          ([_, value]) => res.stdout.indexOf(value) !== -1
         )?.[0];
 
         if (lang) {
