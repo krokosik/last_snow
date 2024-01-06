@@ -1,4 +1,4 @@
-import { CloseIcon, CheckCircleIcon } from "@chakra-ui/icons";
+import { CheckCircleIcon, CloseIcon } from "@chakra-ui/icons";
 import {
   Container,
   Flex,
@@ -7,8 +7,9 @@ import {
   VStack,
   useToast,
 } from "@chakra-ui/react";
-import { ActionButton } from "./ActionButton";
-import { LOGIC, DIM, LANGUAGES } from "../const";
+import { invoke } from "@tauri-apps/api";
+import { Event, listen } from "@tauri-apps/api/event";
+import { appConfigDir } from "@tauri-apps/api/path";
 import {
   ChangeEvent,
   KeyboardEvent,
@@ -17,8 +18,10 @@ import {
   useEffect,
   useState,
 } from "react";
-import { invoke } from "@tauri-apps/api";
 import { info } from "tauri-plugin-log-api";
+import { Store } from "tauri-plugin-store-api";
+import { DIM, LANGUAGES, LOGIC } from "../const";
+import { ActionButton } from "./ActionButton";
 
 export const TextAreaWithControls = forwardRef<
   HTMLTextAreaElement,
@@ -83,11 +86,16 @@ export const TextAreaWithControls = forwardRef<
   }, []);
 
   useEffect(() => {
-    invoke<string>("get_env_var", { key: "MAX_LEN" }).then((res) => {
-      if (+res) {
-        setMaxLen(+res);
-      }
+    appConfigDir().then((dir) => {
+      console.log(`Loading max characters from ${dir}/.settings`);
+      new Store(dir + "/.settings").get("max_characters").then((max) => {
+        if (max) setMaxLen(+max);
+      });
     });
+    const unlisten = listen("max_characters", (event: Event<number>) => {
+      setMaxLen(event.payload);
+    });
+    return () => void unlisten.then((u) => u());
   }, []);
 
   return (

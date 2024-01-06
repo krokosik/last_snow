@@ -30,6 +30,9 @@
           "cmd": "ibus",
           "args": ["engine", { "validator": ".*"}]
         }]
+      },
+      "path": {
+        "all": true
       }
     },
     "bundle": {

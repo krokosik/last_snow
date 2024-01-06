@@ -3,11 +3,10 @@
 
 use rosc::{OscPacket, OscType};
 use serde_json::json;
-use std::f32::consts::E;
-use std::net::{SocketAddrV4, UdpSocket};
+use std::net::UdpSocket;
 use std::thread;
 use std::{env, fs, path::PathBuf};
-use tauri::{App, AppHandle, Manager, Wry};
+use tauri::{AppHandle, Manager, Wry};
 use tauri_plugin_store::{with_store, Store, StoreCollection};
 
 use tauri_plugin_log::LogTarget;
@@ -160,10 +159,6 @@ fn handle_packet(packet: OscPacket, app: &AppHandle, store: &mut Store<Wry>) {
                         .unwrap_or_else(|e| {
                             log::error!("Error inserting max_sentences_per_csv: {}", e);
                         });
-                    app.emit_all("max_characters", max_sentences_per_csv)
-                        .unwrap_or_else(|e| {
-                            log::error!("Error emitting max_sentences_per_csv: {}", e);
-                        });
                 }
                 _ => log::warn!("Invalid OSC address: {}", msg.addr),
             }
@@ -194,6 +189,10 @@ fn main() {
                 get_setting_store_path(&app.handle()),
             )
             .build();
+
+            store.load().unwrap_or_else(|e| {
+                log::error!("Error loading store: {}", e);
+            });
 
             if !store.has("max_characters") {
                 store
