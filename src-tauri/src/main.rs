@@ -4,22 +4,16 @@
 use rosc::{OscPacket, OscType};
 use serde_json::json;
 use std::f32::consts::E;
-use std::net::{UdpSocket, SocketAddrV4};
+use std::net::{SocketAddrV4, UdpSocket};
 use std::thread;
 use std::{env, fs, path::PathBuf};
-use tauri::{Wry, Manager};
-use tauri_plugin_store::{Store, StoreCollection};
+use tauri::{App, AppHandle, Manager, Wry};
+use tauri_plugin_store::{with_store, Store, StoreCollection};
 
 use tauri_plugin_log::LogTarget;
 
 use chrono::Utc;
 use csv;
-
-#[derive(Clone, serde::Serialize)]
-struct Payload {
-    args: Vec<String>,
-    cwd: String,
-}
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 struct Row {
@@ -27,8 +21,6 @@ struct Row {
     sentence: String,
     timestamp: String,
 }
-
-const SENTENCES_PER_CSV: usize = 100;
 
 fn count_csv_rows(file_path: &PathBuf) -> usize {
     let rdr = csv::Reader::from_path(&file_path);
@@ -86,8 +78,15 @@ fn write_sentence(row: &Row, file_path: &PathBuf, headers: bool) {
     wtr.flush().unwrap();
 }
 
+fn get_setting_store_path(app: &AppHandle) -> PathBuf {
+    app.path_resolver()
+        .app_config_dir()
+        .unwrap()
+        .join(".settings")
+}
+
 #[tauri::command]
-fn submit_sentence(language: &str, text: &str) -> Result<(), String> {
+fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), String> {
     let base_dir = tauri::api::path::public_dir().unwrap();
 
     let row = Row {
@@ -100,10 +99,22 @@ fn submit_sentence(language: &str, text: &str) -> Result<(), String> {
 
     let rows = count_csv_rows(&tmp_file_path);
     write_sentence(&row, &tmp_file_path, rows == 0);
-    let sentences_per_csv = env::var("SENTENCES_PER_CSV")
-        .unwrap_or(format!("{}", SENTENCES_PER_CSV))
-        .parse::<usize>()
-        .unwrap();
+
+    let stores = app.state::<StoreCollection<Wry>>();
+    let path = get_setting_store_path(&app);
+    let mut sentences_per_csv = 100;
+
+    with_store(app.app_handle(), stores, path, |store| {
+        store.load().unwrap_or_else(|e| {
+            log::error!("Error loading store: {}", e);
+        });
+        match store.get("max_sentences_per_csv") {
+            Some(val) => sentences_per_csv = val.as_i64().unwrap() as usize,
+            None => log::error!("Error getting max_sentences_per_csv"),
+        }
+        Ok(())
+    })
+    .unwrap();
 
     log::info!("{}/{} rows in tmp.csv", rows + 1, sentences_per_csv);
 
@@ -116,27 +127,43 @@ fn submit_sentence(language: &str, text: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn handle_packet(packet: OscPacket, store: &mut Store<Wry>) {
+fn handle_packet(packet: OscPacket, app: &AppHandle, store: &mut Store<Wry>) {
     match packet {
         OscPacket::Message(msg) => {
-            println!("OSC address: {}", msg.addr);
-            println!("OSC arguments: {:?}", msg.args);
+            log::info!("Received packet: {:?}", msg);
 
             match (msg.addr.as_str(), msg.args.as_slice()) {
                 ("/address", [OscType::String(addr)]) => {
-                    store.insert("td_osc_address".to_owned(), json!(addr)).unwrap_or_else(|e| {
-                        log::error!("Error inserting td_osc_address: {}", e);
-                    });
+                    store
+                        .insert("td_osc_address".to_owned(), json!(addr))
+                        .unwrap_or_else(|e| {
+                            log::error!("Error inserting td_osc_address: {}", e);
+                        });
                 }
-                ("/max_characters", [OscType::Float(max_characters)]) => {
-                    store.insert("max_characters".to_owned(), json!(max_characters)).unwrap_or_else(|e| {
-                        log::error!("Error inserting max_characters: {}", e);
-                    });
+                ("/max_characters", [OscType::Int(max_characters)]) => {
+                    store
+                        .insert("max_characters".to_owned(), json!(max_characters))
+                        .unwrap_or_else(|e| {
+                            log::error!("Error inserting max_characters: {}", e);
+                        });
+                    app.emit_all("max_characters", max_characters)
+                        .unwrap_or_else(|e| {
+                            log::error!("Error emitting max_characters: {}", e);
+                        });
                 }
                 ("/max_sentences_per_csv", [OscType::Int(max_sentences_per_csv)]) => {
-                    store.insert("max_sentences_per_csv".to_owned(), json!(max_sentences_per_csv)).unwrap_or_else(|e| {
-                        log::error!("Error inserting max_sentences_per_csv: {}", e);
-                    });
+                    store
+                        .insert(
+                            "max_sentences_per_csv".to_owned(),
+                            json!(max_sentences_per_csv),
+                        )
+                        .unwrap_or_else(|e| {
+                            log::error!("Error inserting max_sentences_per_csv: {}", e);
+                        });
+                    app.emit_all("max_characters", max_sentences_per_csv)
+                        .unwrap_or_else(|e| {
+                            log::error!("Error emitting max_sentences_per_csv: {}", e);
+                        });
                 }
                 _ => log::warn!("Invalid OSC address: {}", msg.addr),
             }
@@ -147,7 +174,7 @@ fn handle_packet(packet: OscPacket, store: &mut Store<Wry>) {
         }
         OscPacket::Bundle(bundle) => {
             for packet in bundle.content {
-                handle_packet(packet, store);
+                handle_packet(packet, app, store);
             }
         }
     }
@@ -164,45 +191,44 @@ fn main() {
         .setup(|app| {
             let mut store = tauri_plugin_store::StoreBuilder::new(
                 app.handle(),
-                app.path_resolver()
-                    .app_config_dir()
-                    .unwrap()
-                    .join(".settings"),
+                get_setting_store_path(&app.handle()),
             )
             .build();
 
-            log::info!("{}", app.path_resolver()
-            .app_config_dir()
-            .unwrap().join(".settings").display());
-
             if !store.has("max_characters") {
-                store.insert("max_characters".to_owned(), json!(160)).unwrap_or_else(|e| {
-                    log::error!("Error inserting max_characters: {}", e);
-                });
+                store
+                    .insert("max_characters".to_owned(), json!(160))
+                    .unwrap_or_else(|e| {
+                        log::error!("Error inserting max_characters: {}", e);
+                    });
             }
 
             if !store.has("max_sentences_per_csv") {
-                store.insert("max_sentences_per_csv".to_owned(), json!(100)).unwrap_or_else(|e| {
-                    log::error!("Error inserting max_sentences_per_csv: {}", e);
-                });
+                store
+                    .insert("max_sentences_per_csv".to_owned(), json!(100))
+                    .unwrap_or_else(|e| {
+                        log::error!("Error inserting max_sentences_per_csv: {}", e);
+                    });
             }
 
             store.save().unwrap_or_else(|e| {
                 log::error!("Error saving store: {}", e);
             });
 
+            let app_handle = app.handle();
+
             thread::spawn(move || {
                 // Bind the UDP socket to listen on port 7000
                 let socket = UdpSocket::bind("127.0.0.1:7000").unwrap();
-        
+
                 let mut buf = [0u8; rosc::decoder::MTU];
-        
+
                 loop {
                     match socket.recv_from(&mut buf) {
                         Ok((size, addr)) => {
                             println!("Received packet with size {} from: {}", size, addr);
                             let (_, msg) = rosc::decoder::decode_udp(&buf[..size]).unwrap();
-                            handle_packet(msg, &mut store);
+                            handle_packet(msg, &app_handle, &mut store);
                         }
                         Err(e) => {
                             println!("Error receiving from socket: {}", e);
