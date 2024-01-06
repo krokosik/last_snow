@@ -24,7 +24,6 @@ jobs:
           sudo dpkg --add-architecture arm64
           sudo sed -i 's/^deb /deb [arch=amd64] /g' /etc/apt/sources.list
           cat .github/sources.list | sudo tee -a /etc/apt/sources.list
-          sudo apt-get update
 
       - name: Cache apt packages
         uses: awalsh128/cache-apt-pkgs-action@latest
@@ -38,6 +37,7 @@ jobs:
             libwebkit2gtk-4.0-dev:arm64
             libssl-dev:arm64 
           version: ${{ env.APT_CACHE_VERSION }}
+          execute_install_scripts: true
 
       - name: Rust setup
         uses: dtolnay/rust-toolchain@stable
