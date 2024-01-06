@@ -3,7 +3,7 @@ import { HStack, VStack, useDisclosure } from "@chakra-ui/react";
 import { Command } from "@tauri-apps/api/shell";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MdOutlineKeyboard } from "react-icons/md";
-import { info } from "tauri-plugin-log-api";
+import { info, warn } from "tauri-plugin-log-api";
 import {
   ActionButton,
   LanguageDrawer,
@@ -19,16 +19,21 @@ export default function App() {
   const [language, setLanguage] = useState<keyof typeof LANGUAGES>("en");
 
   useEffect(() => {
-    new Command("kb", ["engine", ""]).execute().then((res) => {
-      const lang = Object.entries(LANGUAGES).find(
-        ([_, value]) => value === res.stdout
-      )?.[0];
+    new Command("kb", ["engine", ""])
+      .execute()
+      .then((res) => {
+        info(`Detected keyboard engine: ${res.stdout}`);
+        const lang = Object.entries(LANGUAGES).find(
+          ([_, value]) => value === res.stdout
+        )?.[0];
 
-      if (lang) {
-        info(`Detected language: ${lang}`);
-        setLanguage(lang as any);
-      }
-    });
+        if (lang) {
+          setLanguage(lang as any);
+        }
+      })
+      .catch((err) => {
+        warn(`Failed to detect language: ${err}`);
+      });
   }, []);
 
   const handleFocusChange = useCallback(() => {
@@ -38,7 +43,7 @@ export default function App() {
   // Periodically check if textarea is focused
   useEffect(() => {
     const interval = setInterval(() => {
-      if (document.activeElement !== textareaRef.current) {
+      if (document.activeElement !== textareaRef.current && !isOpen) {
         textareaRef.current?.focus();
       }
     }, 1000);
