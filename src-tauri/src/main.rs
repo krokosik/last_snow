@@ -148,7 +148,7 @@ fn handle_packet(packet: OscPacket, app: &AppHandle, store: &mut Store<Wry>) {
             log::info!("Received packet: {:?}", msg);
 
             match (msg.addr.as_str(), msg.args.as_slice()) {
-                ("/address", [OscType::String(addr)]) => {
+                ("/td_osc_address", [OscType::String(addr)]) => {
                     store
                         .insert("td_osc_address".to_owned(), json!(addr))
                         .unwrap_or_else(|e| {
