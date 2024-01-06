@@ -98,7 +98,6 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
 
     let rows = count_csv_rows(&tmp_file_path);
     write_sentence(&row, &tmp_file_path, rows == 0);
-    
 
     let stores = app.state::<StoreCollection<Wry>>();
     let path = get_setting_store_path(&app);
@@ -115,15 +114,19 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
         match store.get("td_osc_address") {
             Some(val) => {
                 let addr = val.as_str().unwrap();
-                let socket = UdpSocket::bind("127.0.0.1:7001").unwrap();
+                let socket = UdpSocket::bind("last-snow.local:7001").unwrap();
                 let msg = rosc::encoder::encode(&OscPacket::Message(rosc::OscMessage {
                     addr: "/new_row".to_string(),
                     args: vec![OscType::Int(rows as i32)],
-                })).unwrap();
+                }))
+                .unwrap();
 
-                socket
-                    .send_to(&msg, addr)
-                    .expect("couldn't send message");
+                log::info!("Sending packet to {}: {:?}", addr, msg);
+
+                socket.send_to(&msg, addr).unwrap_or_else(|e| {
+                    log::error!("Error sending to socket: {}", e);
+                    0
+                });
             }
             None => log::error!("Error getting td_osc_address"),
         }
@@ -206,7 +209,10 @@ fn main() {
             )
             .build();
 
-            log::info!("Using store at {}", get_setting_store_path(&app.handle()).display());
+            log::info!(
+                "Using store at {}",
+                get_setting_store_path(&app.handle()).display()
+            );
 
             store.load().unwrap_or_else(|e| {
                 log::error!("Error loading store: {}", e);
