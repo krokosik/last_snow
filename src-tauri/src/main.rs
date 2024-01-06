@@ -1,10 +1,14 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use rosc::{OscPacket};
-use std::net::UdpSocket;
+use rosc::{OscPacket, OscType};
+use serde_json::json;
+use std::f32::consts::E;
+use std::net::{UdpSocket, SocketAddrV4};
 use std::thread;
 use std::{env, fs, path::PathBuf};
+use tauri::{Wry, Manager};
+use tauri_plugin_store::{Store, StoreCollection};
 
 use tauri_plugin_log::LogTarget;
 
@@ -112,44 +116,39 @@ fn submit_sentence(language: &str, text: &str) -> Result<(), String> {
     Ok(())
 }
 
-#[tauri::command]
-fn get_env_var(key: &str) -> String {
-    let res = env::var(key).unwrap_or("".to_string());
-    log::info!("Getting env var {}", res);
-    res
-}
-
-fn setup_osc_receiver(app: &mut tauri::App) {
-    thread::spawn(|| {
-        // Bind the UDP socket to listen on port 7000
-        let socket = UdpSocket::bind("127.0.0.1:7000").unwrap();
-
-        let mut buf = [0u8; rosc::decoder::MTU];
-
-        loop {
-            match socket.recv_from(&mut buf) {
-                Ok((size, addr)) => {
-                    println!("Received packet with size {} from: {}", size, addr);
-                    let (_, msg) = rosc::decoder::decode_udp(&buf[..size]).unwrap();
-                    handle_packet(msg);
-                }
-                Err(e) => {
-                    println!("Error receiving from socket: {}", e);
-                    break;
-                }
-            }
-        }
-    });
-}
-
-fn handle_packet(packet: OscPacket) {
+fn handle_packet(packet: OscPacket, store: &mut Store<Wry>) {
     match packet {
         OscPacket::Message(msg) => {
             println!("OSC address: {}", msg.addr);
             println!("OSC arguments: {:?}", msg.args);
+
+            match (msg.addr.as_str(), msg.args.as_slice()) {
+                ("/address", [OscType::String(addr)]) => {
+                    store.insert("td_osc_address".to_owned(), json!(addr)).unwrap_or_else(|e| {
+                        log::error!("Error inserting td_osc_address: {}", e);
+                    });
+                }
+                ("/max_characters", [OscType::Float(max_characters)]) => {
+                    store.insert("max_characters".to_owned(), json!(max_characters)).unwrap_or_else(|e| {
+                        log::error!("Error inserting max_characters: {}", e);
+                    });
+                }
+                ("/max_sentences_per_csv", [OscType::Int(max_sentences_per_csv)]) => {
+                    store.insert("max_sentences_per_csv".to_owned(), json!(max_sentences_per_csv)).unwrap_or_else(|e| {
+                        log::error!("Error inserting max_sentences_per_csv: {}", e);
+                    });
+                }
+                _ => log::warn!("Invalid OSC address: {}", msg.addr),
+            }
+
+            store.save().unwrap_or_else(|e| {
+                log::error!("Error saving store: {}", e);
+            });
         }
         OscPacket::Bundle(bundle) => {
-            println!("OSC Bundle: {:?}", bundle);
+            for packet in bundle.content {
+                handle_packet(packet, store);
+            }
         }
     }
 }
@@ -163,7 +162,7 @@ fn main() {
         )
         .plugin(tauri_plugin_store::Builder::default().build())
         .setup(|app| {
-            tauri_plugin_store::StoreBuilder::new(
+            let mut store = tauri_plugin_store::StoreBuilder::new(
                 app.handle(),
                 app.path_resolver()
                     .app_config_dir()
@@ -172,11 +171,50 @@ fn main() {
             )
             .build();
 
-            setup_osc_receiver(app);
+            log::info!("{}", app.path_resolver()
+            .app_config_dir()
+            .unwrap().join(".settings").display());
+
+            if !store.has("max_characters") {
+                store.insert("max_characters".to_owned(), json!(160)).unwrap_or_else(|e| {
+                    log::error!("Error inserting max_characters: {}", e);
+                });
+            }
+
+            if !store.has("max_sentences_per_csv") {
+                store.insert("max_sentences_per_csv".to_owned(), json!(100)).unwrap_or_else(|e| {
+                    log::error!("Error inserting max_sentences_per_csv: {}", e);
+                });
+            }
+
+            store.save().unwrap_or_else(|e| {
+                log::error!("Error saving store: {}", e);
+            });
+
+            thread::spawn(move || {
+                // Bind the UDP socket to listen on port 7000
+                let socket = UdpSocket::bind("127.0.0.1:7000").unwrap();
+        
+                let mut buf = [0u8; rosc::decoder::MTU];
+        
+                loop {
+                    match socket.recv_from(&mut buf) {
+                        Ok((size, addr)) => {
+                            println!("Received packet with size {} from: {}", size, addr);
+                            let (_, msg) = rosc::decoder::decode_udp(&buf[..size]).unwrap();
+                            handle_packet(msg, &mut store);
+                        }
+                        Err(e) => {
+                            println!("Error receiving from socket: {}", e);
+                            break;
+                        }
+                    }
+                }
+            });
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![submit_sentence, get_env_var])
+        .invoke_handler(tauri::generate_handler![submit_sentence])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
