@@ -1,14 +1,8 @@
-import { Icon } from "@chakra-ui/icons";
-import { HStack, VStack, useDisclosure } from "@chakra-ui/react";
+import { Button, HStack, VStack, useDisclosure } from "@chakra-ui/react";
 import { Command } from "@tauri-apps/api/shell";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MdOutlineKeyboard } from "react-icons/md";
 import { info, warn } from "tauri-plugin-log-api";
-import {
-  ActionButton,
-  LanguageDrawer,
-  TextAreaWithControls,
-} from "./components";
+import { LanguageDrawer, TextAreaWithControls } from "./components";
 import { DIM, LANGUAGES } from "./const";
 
 export default function App() {
@@ -19,7 +13,7 @@ export default function App() {
   const [language, setLanguage] = useState<keyof typeof LANGUAGES>("en");
 
   useEffect(() => {
-    new Command("kb", ["engine", ""])
+    new Command("kb_check", ["engine"])
       .execute()
       .then((res) => {
         info(`Detected keyboard engine: ${res.stdout}`);
@@ -55,13 +49,18 @@ export default function App() {
     <>
       <HStack onClick={handleFocusChange}>
         <VStack w={DIM.SIDE_BAR}>
-          <ActionButton
+          <Button
+            fontSize={DIM.BTN_FONT_SIZE}
+            h={DIM.SIDE_BAR / 2}
+            w={DIM.SIDE_BAR / 2}
             ref={kbBtnRef as any}
             aria-label="change-keyboard-layout"
             colorScheme="blue"
-            icon={<Icon as={MdOutlineKeyboard} />}
+            textTransform="uppercase"
             onClick={onOpen}
-          />
+          >
+            {language}
+          </Button>
         </VStack>
         <TextAreaWithControls language={language} ref={textareaRef} />
       </HStack>

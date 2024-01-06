@@ -28,7 +28,7 @@ export const LanguageDrawer = ({
   const handleLanguageChange = useCallback(
     (lang: keyof typeof LANGUAGES) => () => {
       setLanguage(lang);
-      new Command("kb", ["engine", LANGUAGES[lang]]).execute();
+      new Command("kb_change", ["engine", LANGUAGES[lang]]).execute();
     },
     []
   );

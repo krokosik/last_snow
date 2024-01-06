@@ -90,7 +90,6 @@ export const TextAreaWithControls = forwardRef<
 
   useEffect(() => {
     appConfigDir().then((dir) => {
-      console.log(`Loading max characters from ${dir}/.settings`);
       new Store(dir + "/.settings").get("max_characters").then((max) => {
         if (max) setMaxLen(+max);
       });

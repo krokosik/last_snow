@@ -7,7 +7,7 @@
   },
   "package": {
     "productName": "last_snow",
-    "version": "0.2.5"
+    "version": "0.2.6"
   },
   "tauri": {
     "allowlist": {
@@ -26,9 +26,14 @@
         "open": false,
         "execute": true,
         "scope": [{
-          "name": "kb",
+          "name": "kb_change",
           "cmd": "ibus",
-          "args": ["engine", { "validator": ".*"}]
+          "args": ["engine", { "validator": ".+"}]
+        },
+        {
+          "name": "kb_check",
+          "cmd": "ibus",
+          "args": ["engine"]
         }]
       },
       "path": {
