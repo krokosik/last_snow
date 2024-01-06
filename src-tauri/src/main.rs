@@ -98,6 +98,7 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
 
     let rows = count_csv_rows(&tmp_file_path);
     write_sentence(&row, &tmp_file_path, rows == 0);
+    
 
     let stores = app.state::<StoreCollection<Wry>>();
     let path = get_setting_store_path(&app);
@@ -110,6 +111,21 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
         match store.get("max_sentences_per_csv") {
             Some(val) => sentences_per_csv = val.as_i64().unwrap() as usize,
             None => log::error!("Error getting max_sentences_per_csv"),
+        }
+        match store.get("td_osc_address") {
+            Some(val) => {
+                let addr = val.as_str().unwrap();
+                let socket = UdpSocket::bind("127.0.0.1:7000").unwrap();
+                let msg = rosc::encoder::encode(&OscPacket::Message(rosc::OscMessage {
+                    addr: "/new_row".to_string(),
+                    args: vec![OscType::Int(rows as i32)],
+                })).unwrap();
+
+                socket
+                    .send_to(&msg, addr)
+                    .expect("couldn't send message");
+            }
+            None => log::error!("Error getting td_osc_address"),
         }
         Ok(())
     })
