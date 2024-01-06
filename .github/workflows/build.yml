@@ -9,6 +9,8 @@ jobs:
   release:
     permissions:
       contents: write
+    env:
+      APT_CACHE_VERSION: 1
     strategy:
       fail-fast: false
     runs-on: ubuntu-22.04
@@ -16,6 +18,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Cache apt packages
+        uses: actions/cache@v3
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-${{ env.APT_CACHE_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
 
       - name: Install dependencies
         run: |
