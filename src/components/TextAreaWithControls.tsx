@@ -48,6 +48,11 @@ export const TextAreaWithControls = forwardRef<
     setText("");
   }, []);
 
+  // hack to exit suggestion mode on jp keyboard
+  const prepareSubmit = useCallback(() => {
+    invoke("key_press");
+  }, []);
+
   const handleSubmit = useCallback(() => {
     if (text.length === 0) return;
     setLoading(true);
@@ -81,6 +86,7 @@ export const TextAreaWithControls = forwardRef<
 
   const suppressTab = useCallback(
     (e: KeyboardEvent) => {
+      console.log(e.key);
       if (e.key === "Tab") {
         e.preventDefault();
         e.stopPropagation();
@@ -138,7 +144,7 @@ export const TextAreaWithControls = forwardRef<
           isLoading={isLoading}
           colorScheme="green"
           aria-label="Send text"
-          onClick={handleSubmit}
+          onClick={prepareSubmit}
           icon={<CheckCircleIcon />}
         />
       </VStack>

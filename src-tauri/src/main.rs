@@ -13,6 +13,7 @@ use tauri_plugin_log::LogTarget;
 
 use chrono::Utc;
 use csv;
+use enigo::{Enigo, KeyboardControllable, Key};
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 struct Row {
@@ -194,6 +195,15 @@ fn handle_packet(packet: OscPacket, app: &AppHandle, store: &mut Store<Wry>) {
     }
 }
 
+#[tauri::command]
+fn key_press() {
+    let mut enigo = Enigo::new();
+    enigo.key_click(Key::Return);
+    enigo.key_down(Key::Shift);
+    enigo.key_click(Key::Return);
+    enigo.key_up(Key::Shift);
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(
@@ -264,7 +274,7 @@ fn main() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![submit_sentence])
+        .invoke_handler(tauri::generate_handler![submit_sentence, key_press])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
