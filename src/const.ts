@@ -12,7 +12,7 @@ export const LOGIC = {
 export const LANGUAGES = {
   en: "xkb:us::eng",
   jp: "anthy",
-  cn: "pinyin",
+  cn: "libpinyin",
   kr: "hangul",
   es: "xkb:es::spa",
   fr: "xkb:fr::fra",
