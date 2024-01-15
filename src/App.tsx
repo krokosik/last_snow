@@ -50,6 +50,7 @@ export default function App() {
       }
       setLoading(true);
 
+      info(`Composing: ${isComposing}, data: ${compositionData}`);
       info(`Submitting ${textToSubmit}`);
 
       toast.promise(
