@@ -34,6 +34,8 @@ export default function App() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const kbBtnRef = useRef<HTMLButtonElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const [compositionData, setCompositionData] = useState<string>("");
+  const [isComposing, setIsComposing] = useState<boolean>(false);
 
   const formik = useFormik({
     initialValues: {
@@ -41,15 +43,19 @@ export default function App() {
       text: "",
     },
     onSubmit: ({ text, language }) => {
-      if (text.length === 0) return;
+      const textToSubmit = isComposing ? text + compositionData : text;
+      if (textToSubmit.length === 0) {
+        warn("Empty text submitted");
+        return;
+      }
       setLoading(true);
 
-      info(`Submitting ${text}`);
+      info(`Submitting ${textToSubmit}`);
 
       toast.promise(
         invoke("submit_sentence", {
           language,
-          text,
+          text: textToSubmit,
         })
           .then(() => {
             formik.setFieldValue("text", "");
@@ -179,6 +185,9 @@ export default function App() {
               onChange={handleInputChange}
               resize="none"
               fontSize="4xl"
+              onCompositionUpdate={(e) => setCompositionData(e.data)}
+              onCompositionStart={() => setIsComposing(true)}
+              onCompositionEnd={() => setIsComposing(false)}
               onKeyDown={suppressTab}
             />
             <Text ml="auto">
