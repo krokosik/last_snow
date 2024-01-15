@@ -12,6 +12,8 @@ export const LOGIC = {
 export const LANGUAGES = {
   en: "xkb:us::eng",
   jp: "anthy",
+  cn: "pinyin",
+  kr: "hangul",
   es: "xkb:es::spa",
   fr: "xkb:fr::fra",
   it: "xkb:it::ita",
