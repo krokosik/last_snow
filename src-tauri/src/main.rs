@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use enigo::{Enigo, KeyboardControllable, Key};
 use rosc::{OscPacket, OscType};
 use serde_json::json;
 use std::net::UdpSocket;
@@ -227,6 +228,19 @@ fn handle_packet(packet: OscPacket, app: &AppHandle, store: &mut Store<Wry>) {
     }
 }
 
+#[tauri::command]
+fn press_enter(with_shift: bool) {
+    let mut enigo = Enigo::new();
+  
+    if with_shift {
+        enigo.key_down(Key::Shift);
+    }
+    enigo.key_click(Key::Return);
+    if with_shift {
+        enigo.key_up(Key::Shift);
+    }
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(
@@ -297,7 +311,7 @@ fn main() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![submit_sentence])
+        .invoke_handler(tauri::generate_handler![submit_sentence, press_enter])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

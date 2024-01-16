@@ -34,8 +34,8 @@ export default function App() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const kbBtnRef = useRef<HTMLButtonElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
-  const [compositionData, setCompositionData] = useState<string>("");
-  const [isComposing, setIsComposing] = useState<boolean>(false);
+  // const [compositionData, setCompositionData] = useState<string>("");
+  // const [isComposing, setIsComposing] = useState<boolean>(false);
 
   const formik = useFormik({
     initialValues: {
@@ -43,14 +43,15 @@ export default function App() {
       text: "",
     },
     onSubmit: ({ text, language }) => {
-      const textToSubmit = isComposing ? text + compositionData : text;
+      const textToSubmit = text;
+      // const textToSubmit = isComposing ? text + compositionData : text;
       if (textToSubmit.length === 0) {
         warn("Empty text submitted");
         return;
       }
       setLoading(true);
 
-      info(`Composing: ${isComposing}, data: ${compositionData}`);
+      // info(`Composing: ${isComposing}, data: ${compositionData}`);
       info(`Submitting ${textToSubmit}`);
 
       toast.promise(
@@ -154,8 +155,14 @@ export default function App() {
     return () => void unlisten.then((u) => u());
   }, []);
 
+  const onSubmit = useCallback(() => {
+    invoke("press_enter", { with_shift: false }).then(() =>
+      formik.submitForm()
+    );
+  }, [formik]);
+
   return (
-    <form ref={formRef} onSubmit={formik.handleSubmit}>
+    <form ref={formRef} onSubmit={onSubmit}>
       <HStack onClick={handleFocusChange}>
         <VStack w={DIM.SIDE_BAR}>
           <Button
@@ -186,9 +193,9 @@ export default function App() {
               onChange={handleInputChange}
               resize="none"
               fontSize="4xl"
-              onCompositionUpdate={(e) => setCompositionData(e.data)}
-              onCompositionStart={() => setIsComposing(true)}
-              onCompositionEnd={() => setIsComposing(false)}
+              // onCompositionUpdate={(e) => setCompositionData(e.data)}
+              // onCompositionStart={() => setIsComposing(true)}
+              // onCompositionEnd={() => setIsComposing(false)}
               onKeyDown={suppressTab}
             />
             <Text ml="auto">
