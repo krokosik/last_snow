@@ -140,7 +140,7 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
                 let socket = UdpSocket::bind("last-snow.local:7001").unwrap();
                 let msg = rosc::encoder::encode(&OscPacket::Message(rosc::OscMessage {
                     addr: "/new_row".to_string(),
-                    args: vec![OscType::Int(rows as i32)],
+                    args: vec![OscType::String(row.sentence)],
                 }))
                 .unwrap();
 

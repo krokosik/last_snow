@@ -34,7 +34,7 @@ It is possible to send OSC messages to the Raspberry Pi to control the program. 
 
 - `/max_characters` - sets the maximum number of characters allowed in a sentence. The default value is `160`.
 - `/max_sentences_per_csv` - sets the maximum number of sentences per CSV file. The default value is `100`. Keep in mind that changing this will not affect the existing CSV files.
-- `/td_osc_address` - sets the OSC address (`ip:port`) to which the program will send OSC ping messages upon each new sentence. This can be then used to trigger events in TouchDesigner. Keep in mind there is no default value. You can use the `Local Address` from the `OSC In` DAT, but keep in mind to pick an address from the correct network interface.
+- `/td_osc_address` - sets the OSC address (`ip:port`) to which the program will send OSC ping messages upon each new sentence. This can be then used to trigger events in TouchDesigner. Keep in mind there is no default value. You can use the `Local Address` from the `OSC In` DAT, but keep in mind to pick an address from the correct network interface. The program sends an OSC message to `/new_row` address, followed by the submitted sentence.
 - `/remove_output_csv` - removes the output CSV file. Use its filename as argument, i.e. `/remove_output_csv 0.csv`.
 - `/remove_tmp_csv` - removes the temporary CSV file.
 - `/remove_all_csv` - removes all CSV files.
