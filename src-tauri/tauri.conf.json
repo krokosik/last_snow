@@ -7,7 +7,7 @@
   },
   "package": {
     "productName": "last_snow",
-    "version": "0.2.11"
+    "version": "0.2.12"
   },
   "tauri": {
     "allowlist": {
@@ -19,7 +19,8 @@
         "readFile": true,
         "scope": ["$PUBLIC/*"],
         "writeFile": true,
-        "renameFile": true
+        "renameFile": true,
+        "removeFile": true
       },
       "shell": {
         "all": false,

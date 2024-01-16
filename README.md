@@ -35,6 +35,9 @@ It is possible to send OSC messages to the Raspberry Pi to control the program. 
 - `/max_characters` - sets the maximum number of characters allowed in a sentence. The default value is `160`.
 - `/max_sentences_per_csv` - sets the maximum number of sentences per CSV file. The default value is `100`. Keep in mind that changing this will not affect the existing CSV files.
 - `/td_osc_address` - sets the OSC address (`ip:port`) to which the program will send OSC ping messages upon each new sentence. This can be then used to trigger events in TouchDesigner. Keep in mind there is no default value. You can use the `Local Address` from the `OSC In` DAT, but keep in mind to pick an address from the correct network interface.
+- `/remove_output_csv` - removes the output CSV file. Use its filename as argument, i.e. `/remove_output_csv 0.csv`.
+- `/remove_tmp_csv` - removes the temporary CSV file.
+- `/remove_all_csv` - removes all CSV files.
 
 All of configuration values are saved in `~/.config/last-snow/.settings` and will be loaded on startup, so changes are persistent between Raspberry Pi reboots.
 
@@ -50,8 +53,8 @@ All system keyboard shortcuts like `Alt+F4` or `Ctrl+Alt+Del` are disabled. For 
 
 #### SSH
 
-In case something goes wrong and you need to access the Raspberry Pi directly, you can do so via SSH. Open your terminal and execute: `ssh last_snow@last-snow.local` and type in the same password as for the shared network folder. You now have access to the Raspberry Pi command line. To kill the main program, execute `lsk`. To update it, execute `lsu`. To restart the Raspberry Pi, execute `sudo reboot`. The CSV files are located inside `~/Public`.
+In case something goes wrong and you need to access the Raspberry Pi directly, you can do so via SSH. Open your terminal and execute: `ssh last_snow@last-snow.local` and type in the same password as for the shared network folder. You now have access to the Raspberry Pi command line. To kill the main program, execute `lsk`. To update it, execute `lsu`. To restart the Raspberry Pi, execute `sudo reboot`. The CSV files are located inside `~/Public`. There are also logs in `~/.config/last-snow/logs/last-snow.log`, which you can read using `cat ~/.config/last-snow/logs/last-snow.log`. Alternatively you can run `lsk` and run the program from SSH using `DISPLAY=:0 last-snow`.
 
 #### Updating
 
-In case something needs updating, let me know in detail what the issue is and I will update the package version. It will be then automatically built in the cloud and the Raspberry Pi will download it on the next startup. If you need to update immediately, you can do so via SSH, see above.
+In case something needs updating, let me know in detail what the issue is and I will update the package version. It will be then automatically built in the cloud and you need to update with `lsu`. You can do so via SSH, see above.

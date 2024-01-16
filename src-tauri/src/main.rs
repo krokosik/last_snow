@@ -58,6 +58,28 @@ fn get_new_filename(base_dir: &PathBuf) -> PathBuf {
         .join(format!("{}.csv", last_csv_idx + 1))
 }
 
+fn remove_file_if_exists(file_path: &PathBuf) {
+    log::info!("Removing file {}", file_path.display());
+    if file_path.exists() {
+        fs::remove_file(file_path).unwrap_or_else(|e| {
+            log::error!("Error removing file {}: {}", file_path.display(), e);
+        });
+    } else {
+        log::info!("File {} does not exist", file_path.display());
+    }
+}
+
+fn remove_all_csv(base_dir: &PathBuf) {
+    fs::read_dir(base_dir.join("sentences"))
+        .unwrap()
+        .for_each(|entry| {
+            let entry = entry.unwrap();
+            remove_file_if_exists(&entry.path());
+        });
+
+    remove_file_if_exists(&base_dir.join("tmp.csv"));
+}
+
 fn write_sentence(row: &Row, file_path: &PathBuf, headers: bool) {
     let file = fs::OpenOptions::new()
         .write(true)
@@ -146,6 +168,8 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
 }
 
 fn handle_packet(packet: OscPacket, app: &AppHandle, store: &mut Store<Wry>) {
+    let base_dir = tauri::api::path::public_dir().unwrap();
+
     match packet {
         OscPacket::Message(msg) => {
             log::info!("Received packet: {:?}", msg);
@@ -178,6 +202,15 @@ fn handle_packet(packet: OscPacket, app: &AppHandle, store: &mut Store<Wry>) {
                         .unwrap_or_else(|e| {
                             log::error!("Error inserting max_sentences_per_csv: {}", e);
                         });
+                }
+                ("/remove_all_csv", []) => {
+                    remove_all_csv(&base_dir);
+                }
+                ("/remove_output_csv", [OscType::String(filename)]) => {
+                    remove_file_if_exists(&base_dir.join("sentences").join(filename));
+                }
+                ("/remove_tmp_csv", []) => {
+                    remove_file_if_exists(&base_dir.join("tmp.csv"));
                 }
                 _ => log::warn!("Invalid OSC address: {}", msg.addr),
             }
