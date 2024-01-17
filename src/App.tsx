@@ -155,14 +155,8 @@ export default function App() {
     return () => void unlisten.then((u) => u());
   }, []);
 
-  const onSubmit = useCallback(() => {
-    invoke("press_enter", { with_shift: false }).then(() =>
-      formik.submitForm()
-    );
-  }, [formik]);
-
   return (
-    <form ref={formRef} onSubmit={onSubmit}>
+    <form ref={formRef} onSubmit={formik.handleSubmit}>
       <HStack onClick={handleFocusChange}>
         <VStack w={DIM.SIDE_BAR}>
           <Button
