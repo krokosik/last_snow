@@ -13,7 +13,7 @@ export const LANGUAGES = {
   en: "xkb:us::eng",
   jp: "anthy",
   cn: "libpinyin",
-  kr: "hangul",
+  // kr: "hangul",
   es: "xkb:es::spa",
   fr: "xkb:fr::fra",
   it: "xkb:it::ita",
