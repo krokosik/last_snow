@@ -126,6 +126,12 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
     let path = get_setting_store_path(&app);
     let mut sentences_per_csv = 100;
 
+    if rows + 1 >= sentences_per_csv {
+        let new_file_path = get_new_filename(&base_dir);
+        log::info!("Moving tmp.csv to {}", new_file_path.to_str().unwrap());
+        fs::rename(&tmp_file_path, &new_file_path).unwrap();
+    }
+
     with_store(app.app_handle(), stores, path, |store| {
         store.load().unwrap_or_else(|e| {
             log::error!("Error loading store: {}", e);
@@ -158,12 +164,6 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
     .unwrap();
 
     log::info!("{}/{} rows in tmp.csv", rows + 1, sentences_per_csv);
-
-    if rows + 1 >= sentences_per_csv {
-        let new_file_path = get_new_filename(&base_dir);
-        log::info!("Moving tmp.csv to {}", new_file_path.to_str().unwrap());
-        fs::rename(&tmp_file_path, &new_file_path).unwrap();
-    }
 
     Ok(())
 }
