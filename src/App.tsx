@@ -10,10 +10,10 @@ import {
   useDisclosure,
   useToast,
 } from "@chakra-ui/react";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { Event, listen } from "@tauri-apps/api/event";
 import { appConfigDir } from "@tauri-apps/api/path";
-import { Command } from "@tauri-apps/api/shell";
+import { Command } from "@tauri-apps/plugin-shell";
 import { useFormik } from "formik";
 import {
   ChangeEvent,
@@ -23,10 +23,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { info, warn } from "tauri-plugin-log-api";
-import { Store } from "tauri-plugin-store-api";
 import { ActionButton, LanguageDrawer } from "./components";
 import { DIM, LANGUAGES, LOGIC } from "./const";
+import { info, warn } from "@tauri-apps/plugin-log";
+import { Store } from "@tauri-apps/plugin-store";
 
 export default function App() {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -80,7 +80,7 @@ export default function App() {
   });
 
   useEffect(() => {
-    new Command("kb_check", ["engine"])
+    Command.create("kb_check", "engine")
       .execute()
       .then((res) => {
         info(`Detected keyboard engine: ${res.stdout}`);

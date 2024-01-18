@@ -9,7 +9,7 @@ import {
 } from "@chakra-ui/react";
 import { LanguageButton } from ".";
 import { LANGUAGES } from "../const";
-import { Command } from "@tauri-apps/api/shell";
+import { Command } from "@tauri-apps/plugin-shell";
 import { RefObject, useCallback } from "react";
 
 export const LanguageDrawer = ({

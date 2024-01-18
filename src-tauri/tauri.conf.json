@@ -1,7 +1,7 @@
 {
   "build": {
-    "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
+    "beforeDevCommand": "npm run dev",
     "devPath": "http://localhost:1420",
     "distDir": "../dist"
   },
@@ -9,48 +9,49 @@
     "productName": "last_snow",
     "version": "0.3.3"
   },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "fs": {
-        "all": false,
-        "createDir": true,
-        "readDir": true,
-        "readFile": true,
-        "scope": ["$PUBLIC/*"],
-        "writeFile": true,
-        "renameFile": true,
-        "removeFile": true
-      },
-      "shell": {
-        "all": false,
-        "open": false,
-        "execute": true,
-        "scope": [{
-          "name": "kb_change",
+  "plugins": {
+    "fs": {
+      "scope": [
+        "$PUBLIC/*"
+      ]
+    },
+    "shell": {
+      "scope": [
+        {
+          "args": [
+            "engine",
+            {
+              "validator": ".+"
+            }
+          ],
           "cmd": "ibus",
-          "args": ["engine", { "validator": ".+"}]
+          "name": "kb_change",
+          "sidecar": false
         },
         {
-          "name": "kb_check",
+          "args": [
+            "engine"
+          ],
           "cmd": "ibus",
-          "args": ["engine"]
-        }]
-      },
-      "path": {
-        "all": true
-      }
-    },
+          "name": "kb_check",
+          "sidecar": false
+        }
+      ]
+    }
+  },
+  "tauri": {
     "bundle": {
       "active": true,
-      "targets": ["deb"],
-      "identifier": "last-snow",
       "icon": [
         "icons/32x32.png",
         "icons/128x128.png",
         "icons/128x128@2x.png",
         "icons/icon.icns",
         "icons/icon.ico"
+      ],
+      "identifier": "last-snow",
+      "targets": [
+        "deb"
       ]
     },
     "security": {
@@ -59,10 +60,10 @@
     "windows": [
       {
         "fullscreen": false,
+        "height": 400,
         "resizable": false,
         "title": "last_snow",
-        "width": 1280,
-        "height": 400
+        "width": 1280
       }
     ]
   }

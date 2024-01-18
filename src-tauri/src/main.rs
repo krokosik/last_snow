@@ -8,9 +8,8 @@ use std::net::UdpSocket;
 use std::thread;
 use std::{env, fs, path::PathBuf};
 use tauri::{AppHandle, Manager, Wry};
+use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::{with_store, Store, StoreCollection};
-
-use tauri_plugin_log::LogTarget;
 
 use chrono::Utc;
 use csv;
@@ -101,15 +100,12 @@ fn write_sentence(row: &Row, file_path: &PathBuf, headers: bool) {
 }
 
 fn get_setting_store_path(app: &AppHandle) -> PathBuf {
-    app.path_resolver()
-        .app_config_dir()
-        .unwrap()
-        .join(".settings")
+    app.path().app_config_dir().unwrap().join(".settings")
 }
 
 #[tauri::command]
 fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), String> {
-    let base_dir = tauri::api::path::public_dir().unwrap();
+    let base_dir = app.path().public_dir().unwrap();
 
     let row = Row {
         language: language.to_string(),
@@ -126,7 +122,7 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
     let path = get_setting_store_path(&app);
     let mut sentences_per_csv = 100;
 
-    with_store(app.app_handle(), stores, path, |store| {
+    with_store(app.app_handle().clone(), stores, path, |store| {
         store.load().unwrap_or_else(|e| {
             log::error!("Error loading store: {}", e);
         });
@@ -171,7 +167,7 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
 }
 
 fn handle_packet(packet: OscPacket, app: &AppHandle, store: &mut Store<Wry>) {
-    let base_dir = tauri::api::path::public_dir().unwrap();
+    let base_dir = app.path().public_dir().unwrap();
 
     match packet {
         OscPacket::Message(msg) => {
@@ -191,7 +187,7 @@ fn handle_packet(packet: OscPacket, app: &AppHandle, store: &mut Store<Wry>) {
                         .unwrap_or_else(|e| {
                             log::error!("Error inserting max_characters: {}", e);
                         });
-                    app.emit_all("max_characters", max_characters)
+                    app.emit("max_characters", max_characters)
                         .unwrap_or_else(|e| {
                             log::error!("Error emitting max_characters: {}", e);
                         });
@@ -247,20 +243,25 @@ fn main() {
     tauri::Builder::default()
         .plugin(
             tauri_plugin_log::Builder::default()
-                .targets([LogTarget::LogDir, LogTarget::Stdout, LogTarget::Webview])
+                .targets([
+                    Target::new(TargetKind::LogDir {
+                        file_name: Some("last-snow.log".to_owned()),
+                    }),
+                    Target::new(TargetKind::Stdout),
+                    Target::new(TargetKind::Webview),
+                ])
                 .build(),
         )
         .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_shell::init())
         .setup(|app| {
-            let mut store = tauri_plugin_store::StoreBuilder::new(
-                app.handle(),
-                get_setting_store_path(&app.handle()),
-            )
-            .build();
+            let mut store =
+                tauri_plugin_store::StoreBuilder::new(get_setting_store_path(app.handle()))
+                    .build(app.handle().clone());
 
             log::info!(
                 "Using store at {}",
-                get_setting_store_path(&app.handle()).display()
+                get_setting_store_path(app.handle()).display()
             );
 
             store.load().unwrap_or_else(|e| {
@@ -287,7 +288,7 @@ fn main() {
                 log::error!("Error saving store: {}", e);
             });
 
-            let app_handle = app.handle();
+            let app_handle = app.handle().clone();
 
             thread::spawn(move || {
                 // Bind the UDP socket to listen on port 7000
