@@ -80,7 +80,7 @@ export default function App() {
   });
 
   useEffect(() => {
-    Command.create("kb_check", "engine")
+    Command.create("kb_check", ["engine"])
       .execute()
       .then((res) => {
         info(`Detected keyboard engine: ${res.stdout}`);
