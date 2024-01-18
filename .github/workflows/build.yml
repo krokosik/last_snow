@@ -27,7 +27,7 @@ jobs:
       - name: Setup APT Cache
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: gcc-aarch64-linux-gnu 
+          packages: libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
           version: 2.0
 
       - name: Install ARM dependencies
