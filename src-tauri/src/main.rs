@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use enigo::{Enigo, KeyboardControllable, Key};
+use enigo::{Enigo, Key, KeyboardControllable};
 use rosc::{OscPacket, OscType};
 use serde_json::json;
 use std::net::UdpSocket;
@@ -126,20 +126,24 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
     let path = get_setting_store_path(&app);
     let mut sentences_per_csv = 100;
 
-    if rows + 1 >= sentences_per_csv {
-        let new_file_path = get_new_filename(&base_dir);
-        log::info!("Moving tmp.csv to {}", new_file_path.to_str().unwrap());
-        fs::rename(&tmp_file_path, &new_file_path).unwrap();
-    }
-
     with_store(app.app_handle(), stores, path, |store| {
         store.load().unwrap_or_else(|e| {
             log::error!("Error loading store: {}", e);
         });
+
         match store.get("max_sentences_per_csv") {
             Some(val) => sentences_per_csv = val.as_i64().unwrap() as usize,
             None => log::error!("Error getting max_sentences_per_csv"),
         }
+
+        log::info!("{}/{} rows in tmp.csv", rows + 1, sentences_per_csv);
+
+        if rows + 1 >= sentences_per_csv {
+            let new_file_path = get_new_filename(&base_dir);
+            log::info!("Moving tmp.csv to {}", new_file_path.to_str().unwrap());
+            fs::rename(&tmp_file_path, &new_file_path).unwrap();
+        }
+
         match store.get("td_osc_address") {
             Some(val) => {
                 let addr = val.as_str().unwrap();
@@ -162,8 +166,6 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
         Ok(())
     })
     .unwrap();
-
-    log::info!("{}/{} rows in tmp.csv", rows + 1, sentences_per_csv);
 
     Ok(())
 }
@@ -231,7 +233,7 @@ fn handle_packet(packet: OscPacket, app: &AppHandle, store: &mut Store<Wry>) {
 #[tauri::command]
 fn press_enter(with_shift: bool) {
     let mut enigo = Enigo::new();
-  
+
     if with_shift {
         enigo.key_down(Key::Shift);
     }
@@ -289,7 +291,8 @@ fn main() {
 
             thread::spawn(move || {
                 // Bind the UDP socket to listen on port 7000
-                let socket = UdpSocket::bind("last-snow.local:7000").unwrap();
+                let socket = UdpSocket::bind("last-snow.local:7000")
+                    .unwrap_or_else(|_| UdpSocket::bind("127.0.0.1:7000").unwrap());
                 log::info!("Listening on {}", socket.local_addr().unwrap());
 
                 let mut buf = [0u8; rosc::decoder::MTU];
