@@ -143,19 +143,23 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
         match store.get("td_osc_address") {
             Some(val) => {
                 let addr = val.as_str().unwrap();
-                let socket = UdpSocket::bind("last-snow.local:7001").unwrap();
-                let msg = rosc::encoder::encode(&OscPacket::Message(rosc::OscMessage {
-                    addr: "/new_row".to_string(),
-                    args: vec![OscType::String(row.sentence)],
-                }))
-                .unwrap();
+                if let Ok(socket) = UdpSocket::bind("last-snow.local:7001") {
+                    log::info!("Listening on {}", socket.local_addr().unwrap());
+                    let msg = rosc::encoder::encode(&OscPacket::Message(rosc::OscMessage {
+                        addr: "/new_row".to_string(),
+                        args: vec![OscType::String(row.sentence)],
+                    }))
+                    .unwrap();
 
-                log::info!("Sending packet to {}: {:?}", addr, msg);
+                    log::info!("Sending packet to {}: {:?}", addr, msg);
 
-                socket.send_to(&msg, addr).unwrap_or_else(|e| {
-                    log::error!("Error sending to socket: {}", e);
-                    0
-                });
+                    socket.send_to(&msg, addr).unwrap_or_else(|e| {
+                        log::error!("Error sending to socket: {}", e);
+                        0
+                    });
+                } else {
+                    log::error!("Error binding to socket");
+                }
             }
             None => log::error!("Error getting td_osc_address"),
         }
