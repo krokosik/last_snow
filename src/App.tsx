@@ -23,7 +23,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { ActionButton, LanguageDrawer } from "./components";
+import { ActionButton, KeyboardHint, LanguageDrawer } from "./components";
 import { DIM, LANGUAGES, LOGIC } from "./const";
 import { info, warn } from "@tauri-apps/plugin-log";
 import { Store } from "@tauri-apps/plugin-store";
@@ -191,9 +191,12 @@ export default function App() {
               onCompositionEnd={() => setIsComposing(false)}
               onKeyDown={suppressTab}
             />
-            <Text ml="auto">
-              {formik.values.text.length} / {max_len}
-            </Text>
+            <HStack justifyContent="space-between" alignItems="start">
+              <KeyboardHint language={formik.values.language} />
+              <Text>
+                {formik.values.text.length} / {max_len}
+              </Text>
+            </HStack>
           </Flex>
         </Container>
         <VStack w={DIM.SIDE_BAR} h={DIM.HEIGHT} justifyContent="space-around">
