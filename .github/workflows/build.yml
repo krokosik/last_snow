@@ -22,14 +22,17 @@ jobs:
           cat .github/sources.list | sudo tee -a /etc/apt/sources.list
           sudo apt update
 
-      - name: Setup APT Cache
-        uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev
-          version: 2.0
-
       - name: Install ARM dependencies
-        run: sudo apt-get install -y libwebkit2gtk-4.1-dev:arm64 libssl-dev:arm64 libxdo-dev:arm64 libjavascriptcoregtk-4.1-dev:arm64 libsoup-3.0-dev:arm64
+        run: > 
+          sudo apt-get install -y
+            libwebkit2gtk-4.1-dev:arm64
+            build-essential:arm64
+            curl:arm64
+            wget:arm64
+            file:arm64
+            libssl-dev:arm64
+            libayatana-appindicator3-dev:arm64
+            librsvg2-dev:arm64
 
       - name: Rust setup
         uses: dtolnay/rust-toolchain@stable
