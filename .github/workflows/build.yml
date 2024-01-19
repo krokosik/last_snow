@@ -30,6 +30,7 @@ jobs:
           libssl-dev:arm64
           libayatana-appindicator3-dev:arm64
           librsvg2-dev:arm64
+          libxdo-dev:arm64
 
       - name: Rust setup
         uses: dtolnay/rust-toolchain@stable
