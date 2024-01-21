@@ -11,7 +11,7 @@ use tauri::{AppHandle, Manager, Wry};
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::{with_store, Store, StoreCollection};
 
-use chrono::Utc;
+use chrono::{Local, Utc};
 use csv;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
@@ -48,7 +48,7 @@ fn get_new_filename(base_dir: &PathBuf) -> PathBuf {
                     .to_str()
                     .unwrap()
                     .parse::<usize>()
-                    .unwrap(),
+                    .unwrap_or(0),
                 last_csv_idx,
             );
         });
@@ -106,6 +106,17 @@ fn get_setting_store_path(app: &AppHandle) -> PathBuf {
 #[tauri::command]
 fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), String> {
     let base_dir = app.path().public_dir().unwrap();
+    let daily_dir = base_dir
+        .join("sentences")
+        .join(Local::now().format("%d-%m-%Y").to_string());
+    let total_dir = base_dir.join("sentences").join("ALL");
+
+    vec![&base_dir, &daily_dir, &total_dir]
+        .iter()
+        .filter(|dir| fs::metadata(dir).is_err())
+        .for_each(|dir| {
+            fs::create_dir(dir).unwrap();
+        });
 
     let row = Row {
         language: language.to_string(),
@@ -114,6 +125,14 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
     };
 
     let tmp_file_path = base_dir.join("tmp.csv");
+    let daily_file_path = daily_dir.join("data.csv");
+    let all_file_path = total_dir.join("data.csv");
+
+    let rows = count_csv_rows(&daily_file_path);
+    write_sentence(&row, &daily_file_path, rows == 0);
+
+    let rows = count_csv_rows(&all_file_path);
+    write_sentence(&row, &all_file_path, rows == 0);
 
     let rows = count_csv_rows(&tmp_file_path);
     write_sentence(&row, &tmp_file_path, rows == 0);
