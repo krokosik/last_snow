@@ -1,7 +1,6 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use enigo::{Enigo, Key, KeyboardControllable};
 use rosc::{OscPacket, OscType};
 use serde_json::json;
 use std::net::UdpSocket;
@@ -11,7 +10,7 @@ use tauri::{AppHandle, Manager, Wry};
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::{with_store, Store, StoreCollection};
 
-use chrono::{Local, Utc};
+use chrono::Local;
 use csv;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
@@ -31,54 +30,54 @@ fn count_csv_rows(file_path: &PathBuf) -> usize {
     0
 }
 
-fn get_new_filename(base_dir: &PathBuf) -> PathBuf {
-    let mut last_csv_idx = 0;
-    fs::create_dir_all(base_dir.join("sentences")).unwrap();
+// fn get_new_filename(base_dir: &PathBuf) -> PathBuf {
+//     let mut last_csv_idx = 0;
+//     fs::create_dir_all(base_dir.join("sentences")).unwrap();
 
-    // List all csv files in the directory
-    fs::read_dir(base_dir.join("sentences"))
-        .unwrap()
-        .for_each(|entry| {
-            let entry = entry.unwrap();
-            last_csv_idx = std::cmp::max(
-                entry
-                    .path()
-                    .file_stem()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .parse::<usize>()
-                    .unwrap_or(0),
-                last_csv_idx,
-            );
-        });
+//     // List all csv files in the directory
+//     fs::read_dir(base_dir.join("sentences"))
+//         .unwrap()
+//         .for_each(|entry| {
+//             let entry = entry.unwrap();
+//             last_csv_idx = std::cmp::max(
+//                 entry
+//                     .path()
+//                     .file_stem()
+//                     .unwrap()
+//                     .to_str()
+//                     .unwrap()
+//                     .parse::<usize>()
+//                     .unwrap_or(0),
+//                 last_csv_idx,
+//             );
+//         });
 
-    base_dir
-        .join("sentences")
-        .join(format!("{}.csv", last_csv_idx + 1))
-}
+//     base_dir
+//         .join("sentences")
+//         .join(format!("{}.csv", last_csv_idx + 1))
+// }
 
-fn remove_file_if_exists(file_path: &PathBuf) {
-    log::info!("Removing file {}", file_path.display());
-    if file_path.exists() {
-        fs::remove_file(file_path).unwrap_or_else(|e| {
-            log::error!("Error removing file {}: {}", file_path.display(), e);
-        });
-    } else {
-        log::info!("File {} does not exist", file_path.display());
-    }
-}
+// fn remove_file_if_exists(file_path: &PathBuf) {
+//     log::info!("Removing file {}", file_path.display());
+//     if file_path.exists() {
+//         fs::remove_file(file_path).unwrap_or_else(|e| {
+//             log::error!("Error removing file {}: {}", file_path.display(), e);
+//         });
+//     } else {
+//         log::info!("File {} does not exist", file_path.display());
+//     }
+// }
 
-fn remove_all_csv(base_dir: &PathBuf) {
-    fs::read_dir(base_dir.join("sentences"))
-        .unwrap()
-        .for_each(|entry| {
-            let entry = entry.unwrap();
-            remove_file_if_exists(&entry.path());
-        });
+// fn remove_all_csv(base_dir: &PathBuf) {
+//     fs::read_dir(base_dir.join("sentences"))
+//         .unwrap()
+//         .for_each(|entry| {
+//             let entry = entry.unwrap();
+//             remove_file_if_exists(&entry.path());
+//         });
 
-    remove_file_if_exists(&base_dir.join("tmp.csv"));
-}
+//     remove_file_if_exists(&base_dir.join("tmp.csv"));
+// }
 
 fn write_sentence(row: &Row, file_path: &PathBuf, headers: bool) {
     let file = fs::OpenOptions::new()
@@ -121,10 +120,10 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
     let row = Row {
         language: language.to_string(),
         sentence: text.to_string(),
-        timestamp: Utc::now().to_rfc3339(),
+        timestamp: Local::now().to_rfc3339(),
     };
 
-    let tmp_file_path = base_dir.join("tmp.csv");
+    // let tmp_file_path = base_dir.join("tmp.csv");
     let daily_file_path = daily_dir.join("data.csv");
     let all_file_path = total_dir.join("data.csv");
 
@@ -134,30 +133,30 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
     let rows = count_csv_rows(&all_file_path);
     write_sentence(&row, &all_file_path, rows == 0);
 
-    let rows = count_csv_rows(&tmp_file_path);
-    write_sentence(&row, &tmp_file_path, rows == 0);
+    // let rows = count_csv_rows(&tmp_file_path);
+    // write_sentence(&row, &tmp_file_path, rows == 0);
 
     let stores = app.state::<StoreCollection<Wry>>();
     let path = get_setting_store_path(&app);
-    let mut sentences_per_csv = 100;
+    // let mut sentences_per_csv = 100;
 
     with_store(app.app_handle().clone(), stores, path, |store| {
         store.load().unwrap_or_else(|e| {
             log::error!("Error loading store: {}", e);
         });
 
-        match store.get("max_sentences_per_csv") {
-            Some(val) => sentences_per_csv = val.as_i64().unwrap() as usize,
-            None => log::error!("Error getting max_sentences_per_csv"),
-        }
+        // match store.get("max_sentences_per_csv") {
+        //     Some(val) => sentences_per_csv = val.as_i64().unwrap() as usize,
+        //     None => log::error!("Error getting max_sentences_per_csv"),
+        // }
 
-        log::info!("{}/{} rows in tmp.csv", rows + 1, sentences_per_csv);
+        // log::info!("{}/{} rows in tmp.csv", rows + 1, sentences_per_csv);
 
-        if rows + 1 >= sentences_per_csv {
-            let new_file_path = get_new_filename(&base_dir);
-            log::info!("Moving tmp.csv to {}", new_file_path.to_str().unwrap());
-            fs::rename(&tmp_file_path, &new_file_path).unwrap();
-        }
+        // if rows + 1 >= sentences_per_csv {
+        //     let new_file_path = get_new_filename(&base_dir);
+        //     log::info!("Moving tmp.csv to {}", new_file_path.to_str().unwrap());
+        //     fs::rename(&tmp_file_path, &new_file_path).unwrap();
+        // }
 
         match store.get("td_osc_address") {
             Some(val) => {
@@ -190,7 +189,7 @@ fn submit_sentence(language: &str, text: &str, app: AppHandle) -> Result<(), Str
 }
 
 fn handle_packet(packet: OscPacket, app: &AppHandle, store: &mut Store<Wry>) {
-    let base_dir = app.path().public_dir().unwrap();
+    // let base_dir = app.path().public_dir().unwrap();
 
     match packet {
         OscPacket::Message(msg) => {
@@ -215,25 +214,25 @@ fn handle_packet(packet: OscPacket, app: &AppHandle, store: &mut Store<Wry>) {
                             log::error!("Error emitting max_characters: {}", e);
                         });
                 }
-                ("/max_sentences_per_csv", [OscType::Int(max_sentences_per_csv)]) => {
-                    store
-                        .insert(
-                            "max_sentences_per_csv".to_owned(),
-                            json!(max_sentences_per_csv),
-                        )
-                        .unwrap_or_else(|e| {
-                            log::error!("Error inserting max_sentences_per_csv: {}", e);
-                        });
-                }
-                ("/remove_all_csv", []) => {
-                    remove_all_csv(&base_dir);
-                }
-                ("/remove_output_csv", [OscType::String(filename)]) => {
-                    remove_file_if_exists(&base_dir.join("sentences").join(filename));
-                }
-                ("/remove_tmp_csv", []) => {
-                    remove_file_if_exists(&base_dir.join("tmp.csv"));
-                }
+                // ("/max_sentences_per_csv", [OscType::Int(max_sentences_per_csv)]) => {
+                //     store
+                //         .insert(
+                //             "max_sentences_per_csv".to_owned(),
+                //             json!(max_sentences_per_csv),
+                //         )
+                //         .unwrap_or_else(|e| {
+                //             log::error!("Error inserting max_sentences_per_csv: {}", e);
+                //         });
+                // }
+                // ("/remove_all_csv", []) => {
+                //     remove_all_csv(&base_dir);
+                // }
+                // ("/remove_output_csv", [OscType::String(filename)]) => {
+                //     remove_file_if_exists(&base_dir.join("sentences").join(filename));
+                // }
+                // ("/remove_tmp_csv", []) => {
+                //     remove_file_if_exists(&base_dir.join("tmp.csv"));
+                // }
                 _ => log::warn!("Invalid OSC address: {}", msg.addr),
             }
 
@@ -246,19 +245,6 @@ fn handle_packet(packet: OscPacket, app: &AppHandle, store: &mut Store<Wry>) {
                 handle_packet(packet, app, store);
             }
         }
-    }
-}
-
-#[tauri::command]
-fn press_enter(with_shift: bool) {
-    let mut enigo = Enigo::new();
-
-    if with_shift {
-        enigo.key_down(Key::Shift);
-    }
-    enigo.key_click(Key::Return);
-    if with_shift {
-        enigo.key_up(Key::Shift);
     }
 }
 
@@ -299,13 +285,13 @@ fn main() {
                     });
             }
 
-            if !store.has("max_sentences_per_csv") {
-                store
-                    .insert("max_sentences_per_csv".to_owned(), json!(100))
-                    .unwrap_or_else(|e| {
-                        log::error!("Error inserting max_sentences_per_csv: {}", e);
-                    });
-            }
+            // if !store.has("max_sentences_per_csv") {
+            //     store
+            //         .insert("max_sentences_per_csv".to_owned(), json!(100))
+            //         .unwrap_or_else(|e| {
+            //             log::error!("Error inserting max_sentences_per_csv: {}", e);
+            //         });
+            // }
 
             store.save().unwrap_or_else(|e| {
                 log::error!("Error saving store: {}", e);
@@ -338,7 +324,7 @@ fn main() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![submit_sentence, press_enter])
+        .invoke_handler(tauri::generate_handler![submit_sentence])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
